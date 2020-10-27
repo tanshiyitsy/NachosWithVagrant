@@ -158,7 +158,9 @@ main(int argc, char **argv)
         }
 #endif // NETWORK
     }
-
+    /*
+		这里不会返回，最后的return也不会执行，因为nachos是一个单线程程序
+    */
     currentThread->Finish();	// NOTE: if the procedure "main" 
 				// returns, then the program "nachos"
 				// will exit (as any other normal program
