@@ -55,6 +55,8 @@
 
 #ifdef THREADS
 extern int testnum;
+extern int pid_pool[PID_MAX];
+extern Thread *thread_pool[PID_MAX];
 #endif
 
 // External functions used by this file
@@ -88,20 +90,26 @@ main(int argc, char **argv)
     (void) Initialize(argc, argv);
     
 #ifdef THREADS
+    ThreadTest(); // 用于测试ts命令
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
       argCount = 1;
-      switch (argv[0][1]) {
-      case 'q':
-        testnum = atoi(argv[1]);
-        argCount++;
-        break;
-      default:
-        testnum = 1;
-        break;
+      if(!strcmp(argv[0],"q")){
+      		testnum = atoi(argv[1]); // 将q 后的参数为测试线程数
+	        argCount++;
+      }
+      else if(!strcmp(argv[0], "ts")){
+      	// PID，UID，PNAME，TTY，TIME，CMD
+      	printf("PID\tUID\tPNAME\tTIME\n");
+      	for(int i = 0;i < PID_MAX;i++){
+      		if(pid_pool[i] != 0){
+      			printf("%d\t%d\t%s\t00:00:00\n",thread_pool[i]->getPid(),thread_pool[i]->getUid(),thread_pool[i]->getName());
+      		}
+      	}
+
       }
     }
 
-    ThreadTest();
+    // ThreadTest();
 #endif
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {

@@ -24,13 +24,29 @@ int testnum = 1;
 //	purposes.
 //----------------------------------------------------------------------
 
+// ------------------------* origin *-------------------
+// void
+// SimpleThread(int which)
+// {
+//     int num;
+    
+//     for (num = 0; num < 5; num++) {
+// 	printf("*** thread %d looped %d times\n", which, num);
+//         currentThread->Yield();
+//     }
+// }
+
 void
 SimpleThread(int which)
 {
     int num;
     
-    for (num = 0; num < 5; num++) {
-	printf("*** thread %d looped %d times\n", which, num);
+    for (num = 0; num < 3; num++) {
+        printf("*** thread %d looped %d times\n", which, num); 
+        printf("thread name:%s pid:%d uid:%d priority:%d\n", currentThread->getName(), 
+            currentThread->getPid(), currentThread->getUid(), currentThread->base_priority);
+        printf("\n");
+        // 每运行一次当前线程，就让出CPU，让另一个线程继续执行
         currentThread->Yield();
     }
 }
@@ -41,17 +57,34 @@ SimpleThread(int which)
 //	to call SimpleThread, and then calling SimpleThread ourselves.
 //----------------------------------------------------------------------
 
+// ------------------------* origin *-------------------
+// void
+// ThreadTest1()
+// {
+//     DEBUG('t', "Entering ThreadTest1");
+
+//     Thread *t = new Thread("forked thread");
+
+//     t->Fork(SimpleThread, 1);
+//     SimpleThread(0);
+// }
+
+// ------------------------* origin *-------------------
+
 void
 ThreadTest1()
 {
     DEBUG('t', "Entering ThreadTest1");
-
-    Thread *t = new Thread("forked thread");
-
-    t->Fork(SimpleThread, 1);
+    int num = 3;
+    Thread *t[num];
+    for(int i = 0; i < num;i++){
+        t[i] = new Thread("test thread", i+1);
+    }
+    for(int i = num-1;i >= 0 ;i--){
+        t[i]->Fork(SimpleThread, t[i]->pid);
+    }
     SimpleThread(0);
 }
-
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -61,12 +94,12 @@ void
 ThreadTest()
 {
     switch (testnum) {
-    case 1:
-	ThreadTest1();
-	break;
-    default:
-	printf("No test specified.\n");
-	break;
+        case 1:
+        	ThreadTest1();
+        	break;
+        default:
+        	printf("No test specified.\n");
+        	break;
     }
 }
 

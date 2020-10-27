@@ -54,6 +54,7 @@
 // Size of the thread's private execution stack.
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
 #define StackSize	(4 * 1024)	// in words
+#define PID_MAX 128 // 系统最大线程
 
 
 // Thread state
@@ -81,7 +82,8 @@ class Thread {
     int machineState[MachineStateSize];  // all registers except for stackTop
 
   public:
-    Thread(char* debugName);		// initialize a Thread 
+    Thread(char* threadName, int priority);
+    Thread(char* debugName);		// initialize a Thread
     ~Thread(); 				// deallocate a Thread
 					// NOTE -- thread being deleted
 					// must not be running when delete 
@@ -100,7 +102,13 @@ class Thread {
 						// overflowed its stack
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
+    int getPid() { return pid;}
+    int getUid() { return uid;}
     void Print() { printf("%s, ", name); }
+
+    int pid;
+    int uid;
+    int base_priority;
 
   private:
     // some of the private data for this class is listed above

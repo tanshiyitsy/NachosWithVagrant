@@ -24,6 +24,8 @@
 					// execution stack, for detecting 
 					// stack overflows
 
+int pid_pool[PID_MAX];
+Thread *thread_pool[PID_MAX];
 //----------------------------------------------------------------------
 // Thread::Thread
 // 	Initialize a thread control block, so that we can then call
@@ -32,12 +34,62 @@
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
+Thread::Thread(char* threadName, int priority)
+{
+    name = threadName;
+    stackTop = NULL;
+    stack = NULL;
+    status = JUST_CREATED;
+    base_priority = priority;
+    //uid = getuid();  // 获取Linux当前的登录用户作为UID
+    uid = 1;
+    pid = -1;
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    for(int i = 0;i < PID_MAX;i++){
+        if(pid_pool[i] == 0){
+            pid_pool[i] = 1;
+            pid = i;
+            break;
+        }
+    }
+    (void) interrupt->SetLevel(oldLevel);
+    if(pid == -1){
+        printf("fail to create thread:%s, reason:there is no process number available\n", threadName);
+    }
+    else{
+        thread_pool[pid] = this;
+    }
+
+#ifdef USER_PROGRAM
+    space = NULL;
+#endif
+}
 Thread::Thread(char* threadName)
 {
     name = threadName;
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    base_priority = 0;
+    // uid = getuid();  // 获取Linux当前的登录用户作为UID
+    uid = 1;
+    pid = -1;
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    for(int i = 0;i < PID_MAX;i++){
+        if(pid_pool[i] == 0){
+            pid_pool[i] = 1;
+            pid = i;
+            break;
+        }
+    }
+    (void) interrupt->SetLevel(oldLevel);
+    if(pid == -1){
+        printf("fail to create thread:%s, reason:there is no process number available\n", threadName);
+    }
+    else{
+        thread_pool[pid] = this;
+    }
+
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
@@ -148,6 +200,10 @@ Thread::Finish ()
     
     DEBUG('t', "Finishing thread \"%s\"\n", getName());
     
+    pid_pool[currentThread->pid] = 0;  // delete pid
+    thread_pool[currentThread->pid] = NULL;
+
+
     threadToBeDestroyed = currentThread;
     Sleep();					// invokes SWITCH
     // not reached

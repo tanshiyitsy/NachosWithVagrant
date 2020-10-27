@@ -50,13 +50,31 @@ Scheduler::~Scheduler()
 //	"thread" is the thread to be put on the ready list.
 //----------------------------------------------------------------------
 
-void
-Scheduler::ReadyToRun (Thread *thread)
-{
-    DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
+// ------------------------* origin *-------------------
+// void
+// Scheduler::ReadyToRun (Thread *thread)
+// {
+//     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
-    thread->setStatus(READY);
-    readyList->Append((void *)thread);
+//     thread->setStatus(READY);
+//     readyList->Append((void *)thread);
+// }
+
+// ------------------------* 基于优先级的调度算法 *-------------------
+void Scheduler::ReadyToRun(Thread *thread)
+{
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    // 判断一下当前线程优先级和CPU上的,直接抢占
+    if(thread->base_priority < currentThread->base_priority){
+        ReadyToRun(currentThread);
+        Run(thread);
+    }
+    // 否则加入就绪队列
+    else{
+        thread->setStatus(READY);
+        readyList->SortedInsert(thread, thread->base_priority);
+    }
+    (void) interrupt->SetLevel(oldLevel);
 }
 
 //----------------------------------------------------------------------
@@ -67,11 +85,15 @@ Scheduler::ReadyToRun (Thread *thread)
 //	Thread is removed from the ready list.
 //----------------------------------------------------------------------
 
+// ------------------------* origin *-------------------
+// ------------------------* 基于优先级的调度 *-------------------
 Thread *
 Scheduler::FindNextToRun ()
 {
     return (Thread *)readyList->Remove();
 }
+
+
 
 //----------------------------------------------------------------------
 // Scheduler::Run
