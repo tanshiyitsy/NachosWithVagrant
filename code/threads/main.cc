@@ -91,8 +91,8 @@ main(int argc, char **argv)
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
       argCount = 1;
       switch (argv[0][1]) {
-      case 'q':
-        testnum = atoi(argv[1]);
+      case 'q': 
+        testnum = atoi(argv[1]);  //将q 后的参数为测试线程数
         argCount++;
         break;
       default:

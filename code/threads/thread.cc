@@ -31,7 +31,9 @@
 //
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
-
+// 这个是class Thread 的 constructor
+// stackTop 存储当前的stack pointer(SP)
+// stack 存储栈底，用于 栈溢出 检查
 Thread::Thread(char* threadName)
 {
     name = threadName;
@@ -84,12 +86,19 @@ Thread::~Thread()
 //	"arg" is a single argument to be passed to the procedure.
 //----------------------------------------------------------------------
 
+/*
+参数分别为新进程需要执行的方法名，和传入该方法的参数
+*/
 void 
 Thread::Fork(VoidFunctionPtr func, int arg)
 {
     DEBUG('t', "Forking thread \"%s\" with func = 0x%x, arg = %d\n",
 	  name, (int) func, arg);
     
+    /*
+        1. allocate the memory space of stack：分配空间+栈顶位置
+        2. initialize the array machineState[]
+    */
     StackAllocate(func, arg);
 
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
@@ -140,6 +149,9 @@ Thread::CheckOverflow()
 //----------------------------------------------------------------------
 
 //
+// 该线程的结束实际上是在下一个线程完成上下文切换之后
+// 在scheduler::Run(Thread)中，切换完上下文后，会判断threadToBeDestroyed这个变量是否为空
+// 不为空的的话，会删除该变量指向的线程
 void
 Thread::Finish ()
 {
@@ -183,7 +195,7 @@ Thread::Yield ()
     
     nextThread = scheduler->FindNextToRun();
     if (nextThread != NULL) {
-	scheduler->ReadyToRun(this);
+	scheduler->ReadyToRun(this); // 这里为什么不是nextThread, 将当前线程添加至等待队列中
 	scheduler->Run(nextThread);
     }
     (void) interrupt->SetLevel(oldLevel);

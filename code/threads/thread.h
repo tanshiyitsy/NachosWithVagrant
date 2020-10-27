@@ -73,6 +73,11 @@ extern void ThreadPrint(int arg);
 //  Some threads also belong to a user address space; threads
 //  that only run in the kernel have a NULL address space.
 
+/*
+ stack 存储栈底，用于检查 栈溢出
+ stackTop 存储当前的stack pointer(SP)
+ 其他的寄存器, 比如PC，存储在machineState[]
+*/
 class Thread {
   private:
     // NOTE: DO NOT CHANGE the order of these first two members.
