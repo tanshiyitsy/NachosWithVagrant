@@ -264,6 +264,7 @@ void ThreadPrint(int arg){ Thread *t = (Thread *)arg; t->Print(); }
 void
 Thread::StackAllocate (VoidFunctionPtr func, int arg)
 {
+    // 申请线程的栈空间
     stack = (int *) AllocBoundedArray(StackSize * sizeof(int));
 
 #ifdef HOST_SNAKE
@@ -276,6 +277,7 @@ Thread::StackAllocate (VoidFunctionPtr func, int arg)
     // SPARC stack must contains at least 1 activation record to start with.
     stackTop = stack + StackSize - 96;
 #else  // HOST_MIPS  || HOST_i386
+    // 设置栈首指针
     stackTop = stack + StackSize - 4;	// -4 to be on the safe side!
 #ifdef HOST_i386
     // the 80386 passes the return address on the stack.  In order for
@@ -285,6 +287,7 @@ Thread::StackAllocate (VoidFunctionPtr func, int arg)
     *(--stackTop) = (int)ThreadRoot;
 #endif
 #endif  // HOST_SPARC
+    // 设置栈溢出标志
     *stack = STACK_FENCEPOST;
 #endif  // HOST_SNAKE
     

@@ -191,6 +191,16 @@ SWITCH:
 
 	.SPACE  $TEXT$
 	.SUBSPA $CODE$
+# ThreadRoot (int InitialPC, int InitialArg, int WhenDonePC, int StartupPC) 
+# InitialPC 指明新生成线程的入口函数地址
+# InitialArg 是该入口函数的参数
+# StartupPC 是在运行该线程是需要作的一些初始化工作，比如开中断
+# 而 WhenDonePC 是当该线程运行结束时需要作的一些后续工作。
+# 工作过程
+# 1. 调用startupPC函数
+# 2. 调用InitialPC函数
+# 3. 调用WhenDonePC函数
+# ThreadRoot入口转而运行线程所需运行的函数，从而达到生成现成的目的
 ThreadRoot
 	.PROC
 	.CALLINFO CALLER,FRAME=0
@@ -210,6 +220,12 @@ ThreadRoot
 
 	.PROCEND
 
+# void SWITCH(Thread *t1, Thread *t2)
+# t1 是原运行线程指针,t2 是目标线程指针
+# 三步曲
+# 1. 保存原来的
+# 2. 恢复新的
+# 3. 在新运行线程的栈空间上运行新线程
 
 SWITCH
 	.PROC
