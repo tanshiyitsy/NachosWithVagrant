@@ -155,14 +155,14 @@ Interrupt::OneTick()
 // advance simulated time
     if (status == SystemMode) {
         stats->totalTicks += SystemTick;
-	stats->systemTicks += SystemTick;
+    	stats->systemTicks += SystemTick;
     } else {					// USER_PROGRAM
-	stats->totalTicks += UserTick;
-	stats->userTicks += UserTick;
+    	stats->totalTicks += UserTick;
+    	stats->userTicks += UserTick;
     }
     DEBUG('i', "\n== Tick %d ==\n", stats->totalTicks);
 
-// check any pending interrupts are now ready to fire
+    // check any pending interrupts are now ready to fire
     ChangeLevel(IntOn, IntOff);		// first, turn off interrupts
 					// (interrupt handlers run with
 					// interrupts disabled)
@@ -171,10 +171,10 @@ Interrupt::OneTick()
     ChangeLevel(IntOff, IntOn);		// re-enable interrupts
     if (yieldOnReturn) {		// if the timer device handler asked 
 					// for a context switch, ok to do it now
-	yieldOnReturn = FALSE;
- 	status = SystemMode;		// yield is a kernel routine
-	currentThread->Yield();
-	status = old;
+    	yieldOnReturn = FALSE;
+     	status = SystemMode;		// yield is a kernel routine
+    	currentThread->Yield();
+    	status = old;
     }
 }
 
