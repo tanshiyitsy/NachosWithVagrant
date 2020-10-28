@@ -93,10 +93,13 @@ class Thread {
 					// is called
 
     // basic thread operations
-
+ 
+	// Fork: JUST_CREATED->READY
     void Fork(VoidFunctionPtr func, int arg); 	// Make thread run (*func)(arg)
+	// 放弃CPU，RUNNING->READY，如果就绪队列为空，该进程继续运行；否则运行下一个就绪队列
     void Yield();  				// Relinquish the CPU if any 
 						// other thread is runnable
+	// Sleep:   RUNNING->BLOCKED,如果就绪队列为空，CPU空转；通常IO请求，或者等待事件时被调用
     void Sleep();  				// Put the thread to sleep and 
 						// relinquish the processor
     void Finish();  				// The thread is done executing
