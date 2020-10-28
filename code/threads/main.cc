@@ -108,12 +108,12 @@ main(int argc, char **argv)
 
       }
     }
-
+    // stats->Print();
     // ThreadTest();
 #endif
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
-	argCount = 1;
+		argCount = 1;
         if (!strcmp(*argv, "-z"))               // print copyright
             printf (copyright);
 #ifdef USER_PROGRAM
@@ -167,6 +167,7 @@ main(int argc, char **argv)
 #endif // NETWORK
     }
 
+    printf("currentThread = %s\n", currentThread->getName());
     currentThread->Finish();	// NOTE: if the procedure "main" 
 				// returns, then the program "nachos"
 				// will exit (as any other normal program

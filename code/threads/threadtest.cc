@@ -83,7 +83,7 @@ ThreadTest1()
     for(int i = num-1;i >= 0 ;i--){
         t[i]->Fork(SimpleThread, t[i]->pid);
     }
-    SimpleThread(0);
+    // SimpleThread(0);
 }
 //----------------------------------------------------------------------
 // ThreadTest
