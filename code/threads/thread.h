@@ -57,6 +57,7 @@
 #define PID_MAX 128 // 系统最大线程
 
 
+
 // Thread state
 enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
 
@@ -105,10 +106,12 @@ class Thread {
     int getPid() { return pid;}
     int getUid() { return uid;}
     void Print() { printf("%s, ", name); }
+    int getTricks() { return tricks;}
 
     int pid;
     int uid;
     int base_priority;
+    int tricks;
 
   private:
     // some of the private data for this class is listed above

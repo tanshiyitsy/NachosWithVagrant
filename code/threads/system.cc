@@ -60,6 +60,8 @@ extern void Cleanup();
 static void
 TimerInterruptHandler(int dummy)
 {
+    printf("here is a TimerInterruptHandler,will switch the thread\n");
+    // yield
     if (interrupt->getStatus() != IdleMode)
 	interrupt->YieldOnReturn();
 }
@@ -131,10 +133,14 @@ Initialize(int argc, char **argv)
 
     DebugInit(debugArgs);			// initialize DEBUG messages
     stats = new Statistics();			// collect statistics
-    interrupt = new Interrupt;			// start up interrupt handling
+    interrupt = new Interrupt();			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
-    if (randomYield)				// start the timer (if needed)
-	timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    // Timer(VoidFunctionPtr timerHandler, int callArg, bool doRandom);
+ //    if (randomYield)				// start the timer (if needed)
+	// timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    
+    timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    
 
     threadToBeDestroyed = NULL;
 
@@ -146,6 +152,7 @@ Initialize(int argc, char **argv)
 
     interrupt->Enable();
     CallOnUserAbort(Cleanup);			// if user hits ctl-C
+
     
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first

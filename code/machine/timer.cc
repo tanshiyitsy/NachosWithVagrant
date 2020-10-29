@@ -25,7 +25,9 @@
 
 // dummy function because C++ does not allow pointers to member functions
 static void TimerHandler(int arg)
-{ Timer *p = (Timer *)arg; p->TimerExpired(); }
+{ Timer *p = (Timer *)arg; 
+    p->TimerExpired(); 
+}
 
 //----------------------------------------------------------------------
 // Timer::Timer

@@ -13,7 +13,7 @@
 #include "system.h"
 
 // testnum is set in main.cc
-int testnum = 1;
+int testnum = 2;
 
 //----------------------------------------------------------------------
 // SimpleThread
@@ -41,7 +41,7 @@ SimpleThread(int which)
 {
     int num;
     
-    for (num = 0; num < 3; num++) {
+    for (num = 0; num < 4; num++) {
         printf("*** thread %d looped %d times\n", which, num); 
         printf("thread name:%s pid:%d uid:%d priority:%d\n", currentThread->getName(), 
             currentThread->getPid(), currentThread->getUid(), currentThread->base_priority);
@@ -69,21 +69,38 @@ SimpleThread(int which)
 //     SimpleThread(0);
 // }
 
-// ------------------------* origin *-------------------
+// ------------------------* new *-------------------
 
 void
 ThreadTest1()
 {
     DEBUG('t', "Entering ThreadTest1");
-    int num = 3;
-    Thread *t[num];
-    for(int i = 0; i < num;i++){
-        t[i] = new Thread("test thread", i+1);
+    // int num = 3;
+    // Thread *t[num];
+    // for(int i = 0; i < num;i++){
+    //     t[i] = new Thread("test thread", i+1);
+    // }
+    // for(int i = num-1;i >= 0 ;i--){
+    //     t[i]->Fork(SimpleThread, t[i]->pid);
+    // }
+    SimpleThread(0);
+}
+
+// 参数为该线程运行的时间
+void TestTimeSlice(int time){
+    for(int i = 0;i < time;i++){
+        IntStatus oldLevel = interrupt->SetLevel(IntOff);
+        (void)interrupt->SetLevel(oldLevel);
+        printf("current: name=%s pid=%d use_trick = %d loop time:%d\n", currentThread->getName(),currentThread->getPid(),currentThread->getTricks(),i+1);
     }
-    for(int i = num-1;i >= 0 ;i--){
-        t[i]->Fork(SimpleThread, t[i]->pid);
-    }
-    // SimpleThread(0);
+}
+// ------------------------* time slice *-------------------
+void ThreadTest2(){
+    Thread *t1 = new Thread("t1");
+    Thread *t2 = new Thread("t2");
+    t1->Fork(TestTimeSlice,11);
+    t2->Fork(TestTimeSlice,20);
+    TestTimeSlice(30);
 }
 //----------------------------------------------------------------------
 // ThreadTest
@@ -97,6 +114,9 @@ ThreadTest()
         case 1:
         	ThreadTest1();
         	break;
+        case 2:
+            ThreadTest2();
+            break;
         default:
         	printf("No test specified.\n");
         	break;

@@ -122,7 +122,11 @@ Interrupt::SetLevel(IntStatus now)
 
     ChangeLevel(old, now);			// change to new state
     if ((now == IntOn) && (old == IntOff))
-	OneTick();				// advance simulated time
+    {
+        OneTick();              // advance simulated time
+        // printf("open interrupts and OneTick\n");
+    }
+	
     return old;
 }
 
@@ -156,9 +160,11 @@ Interrupt::OneTick()
     if (status == SystemMode) {
         stats->totalTicks += SystemTick;
     	stats->systemTicks += SystemTick;
+        currentThread->tricks += SystemTick;
     } else {					// USER_PROGRAM
     	stats->totalTicks += UserTick;
     	stats->userTicks += UserTick;
+        currentThread->tricks += UserTick;
     }
     DEBUG('i', "\n== Tick %d ==\n", stats->totalTicks);
 
@@ -176,6 +182,7 @@ Interrupt::OneTick()
     	currentThread->Yield();
     	status = old;
     }
+
 }
 
 //----------------------------------------------------------------------
@@ -213,6 +220,7 @@ Interrupt::Idle()
     DEBUG('i', "Machine idling; checking for interrupts.\n");
     status = IdleMode;
     if (CheckIfDue(TRUE)) {		// check for any pending interrupts
+        // printf("Idle() CheckIfDue Tur  == True\n");
     	while (CheckIfDue(FALSE))	// check for any other pending 
 	    ;				// interrupts
         yieldOnReturn = FALSE;		// since there's nothing in the
@@ -228,7 +236,7 @@ Interrupt::Idle()
     // is not reached.  Instead, the halt must be invoked by the user program.
 
     DEBUG('i', "Machine idle.  No interrupts to do.\n");
-    printf("No threads ready or runnable, and no pending interrupts.\n");
+    printf("\n\n\nNo threads ready or runnable, and no pending interrupts.\n");
     printf("Assuming the program completed.\n");
     Halt();
 }
@@ -265,6 +273,7 @@ void
 Interrupt::Schedule(VoidFunctionPtr handler, int arg, int fromNow, IntType type)
 {
     int when = stats->totalTicks + fromNow;
+    // printf("when = %d totalTicks = %d fromNow = %d\n", when, stats->totalTicks, fromNow);
     PendingInterrupt *toOccur = new PendingInterrupt(handler, arg, when, type);
 
     DEBUG('i', "Scheduling interrupt handler the %s at time = %d\n", 
@@ -302,8 +311,10 @@ Interrupt::CheckIfDue(bool advanceClock)
 
     if (toOccur == NULL)		// no pending interrupts
 	return FALSE;			
-
+     
+    // printf("the next interrupts will at %d; now is %d\n\n", when,stats->totalTicks);
     if (advanceClock && when > stats->totalTicks) {	// advance the clock
+        // printf("here will jump to first interrupts ticks\n");
 	stats->idleTicks += (when - stats->totalTicks);
 	stats->totalTicks = when;
     } else if (when > stats->totalTicks) {	// not time yet, put it back
@@ -314,7 +325,7 @@ Interrupt::CheckIfDue(bool advanceClock)
 // Check if there is nothing more to do, and if so, quit
     if ((status == IdleMode) && (toOccur->type == TimerInt) 
 				&& pending->IsEmpty()) {
-	 pending->SortedInsert(toOccur, when);
+	   pending->SortedInsert(toOccur, when);
 	 return FALSE;
     }
 
@@ -324,6 +335,7 @@ Interrupt::CheckIfDue(bool advanceClock)
     if (machine != NULL)
     	machine->DelayedLoad(0, 0);
 #endif
+    // printf("now executed the interrupt\n");
     inHandler = TRUE;
     status = SystemMode;			// whatever we were doing,
 						// we are now going to be
@@ -332,6 +344,7 @@ Interrupt::CheckIfDue(bool advanceClock)
     status = old;				// restore the machine status
     inHandler = FALSE;
     delete toOccur;
+    // printf("now executed over the interrupt\n");
     return TRUE;
 }
 

@@ -90,6 +90,7 @@ main(int argc, char **argv)
     (void) Initialize(argc, argv);
     
 #ifdef THREADS
+    printf("above is initialize\n");
     ThreadTest(); // 用于测试ts命令
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
       argCount = 1;
@@ -167,7 +168,7 @@ main(int argc, char **argv)
 #endif // NETWORK
     }
 
-    printf("currentThread = %s\n", currentThread->getName());
+    printf("is  going to finish\n");
     currentThread->Finish();	// NOTE: if the procedure "main" 
 				// returns, then the program "nachos"
 				// will exit (as any other normal program

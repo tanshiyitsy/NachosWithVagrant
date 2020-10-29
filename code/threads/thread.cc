@@ -40,11 +40,12 @@ Thread::Thread(char* threadName, int priority)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+
+    tricks = 0;
     base_priority = priority;
     //uid = getuid();  // 获取Linux当前的登录用户作为UID
     uid = 1;
     pid = -1;
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
     for(int i = 0;i < PID_MAX;i++){
         if(pid_pool[i] == 0){
             pid_pool[i] = 1;
@@ -52,7 +53,6 @@ Thread::Thread(char* threadName, int priority)
             break;
         }
     }
-    (void) interrupt->SetLevel(oldLevel);
     if(pid == -1){
         printf("fail to create thread:%s, reason:there is no process number available\n", threadName);
     }
@@ -70,11 +70,12 @@ Thread::Thread(char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
-    base_priority = 0;
+
+    tricks = 0;
+    base_priority = 100;
     // uid = getuid();  // 获取Linux当前的登录用户作为UID
     uid = 1;
     pid = -1;
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
     for(int i = 0;i < PID_MAX;i++){
         if(pid_pool[i] == 0){
             pid_pool[i] = 1;
@@ -82,7 +83,6 @@ Thread::Thread(char* threadName)
             break;
         }
     }
-    (void) interrupt->SetLevel(oldLevel);
     if(pid == -1){
         printf("fail to create thread:%s, reason:there is no process number available\n", threadName);
     }
@@ -203,7 +203,6 @@ Thread::Finish ()
     pid_pool[currentThread->pid] = 0;  // delete pid
     thread_pool[currentThread->pid] = NULL;
 
-
     threadToBeDestroyed = currentThread;
     Sleep();					// invokes SWITCH
     // not reached
@@ -239,8 +238,12 @@ Thread::Yield ()
     
     nextThread = scheduler->FindNextToRun();
     if (nextThread != NULL) {
+        printf("nextThread = %s\n", nextThread->getName());
     	scheduler->ReadyToRun(this);
     	scheduler->Run(nextThread);
+    }
+    else{
+        printf("the nextThread is NULL\n");
     }
     (void) interrupt->SetLevel(oldLevel);
 }
@@ -276,7 +279,10 @@ Thread::Sleep ()
 
     status = BLOCKED;
     while ((nextThread = scheduler->FindNextToRun()) == NULL)
-	interrupt->Idle();	// no one to run, wait for an interrupt
+    {
+        interrupt->Idle();  // no one to run, wait for an interrupt
+    }
+	
         
     scheduler->Run(nextThread); // returns when we've been signalled
 }

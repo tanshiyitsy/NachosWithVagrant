@@ -51,33 +51,30 @@ Scheduler::~Scheduler()
 //----------------------------------------------------------------------
 
 // ------------------------* origin *-------------------
-// void
-// Scheduler::ReadyToRun (Thread *thread)
-// {
-//     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
-
-//     thread->setStatus(READY);
-//     readyList->Append((void *)thread);
-// }
-
-// ------------------------* 基于优先级的调度算法 *-------------------
-void Scheduler::ReadyToRun(Thread *thread)
+void
+Scheduler::ReadyToRun (Thread *thread)
 {
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
-    // 判断一下当前线程优先级和CPU上的,直接抢占
-    if(thread->base_priority < currentThread->base_priority){
-        ReadyToRun(currentThread);
-        Run(thread);
-    }
-    // 否则加入就绪队列
-    else{
-        thread->setStatus(READY);
-        readyList->SortedInsert(thread, thread->base_priority);
-    }
-    (void) interrupt->SetLevel(oldLevel);
+    DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
+    thread->setStatus(READY);
+    readyList->Append((void *)thread);
 }
 
-
+// // ------------------------* 基于优先级的调度算法 *-------------------
+// void Scheduler::ReadyToRun(Thread *thread)
+// {
+//     IntStatus oldLevel = interrupt->SetLevel(IntOff);
+//     // 判断一下当前线程优先级和CPU上的,直接抢占
+//     if(thread->base_priority < currentThread->base_priority){
+//         ReadyToRun(currentThread);
+//         Run(thread);
+//     }
+//     // 否则加入就绪队列
+//     else{
+//         thread->setStatus(READY);
+//         readyList->SortedInsert(thread, thread->base_priority);
+//     }
+//     (void) interrupt->SetLevel(oldLevel);
+// }
 
 
 
