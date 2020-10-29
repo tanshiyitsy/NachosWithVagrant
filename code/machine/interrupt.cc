@@ -23,6 +23,7 @@
 #include "copyright.h"
 #include "interrupt.h"
 #include "system.h"
+// extern QUEUQ_NUM
 
 // String definitions for debugging messages
 
@@ -179,6 +180,10 @@ Interrupt::OneTick()
 					// for a context switch, ok to do it now
     	yieldOnReturn = FALSE;
      	status = SystemMode;		// yield is a kernel routine
+        if(currentThread->current_priority < 7){
+            // 优先数加1
+            currentThread->current_priority = currentThread->current_priority + 1;
+        }
     	currentThread->Yield();
     	status = old;
     }

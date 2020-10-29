@@ -22,6 +22,8 @@
 #include "scheduler.h"
 #include "system.h"
 
+// 多级就绪队列
+
 //----------------------------------------------------------------------
 // Scheduler::Scheduler
 // 	Initialize the list of ready but not running threads to empty.
@@ -29,7 +31,10 @@
 
 Scheduler::Scheduler()
 { 
-    readyList = new List; 
+    // readyList = new List; 
+    for(int i = 0;i < QUEUQ_NUM;i++){
+        readyList[i] = new List;
+    }
 } 
 
 //----------------------------------------------------------------------
@@ -39,7 +44,10 @@ Scheduler::Scheduler()
 
 Scheduler::~Scheduler()
 { 
-    delete readyList; 
+    // delete readyList; 
+    for(int i = 0;i < QUEUQ_NUM;i++){
+        delete readyList[i];
+    }
 } 
 
 //----------------------------------------------------------------------
@@ -51,30 +59,22 @@ Scheduler::~Scheduler()
 //----------------------------------------------------------------------
 
 // ------------------------* origin *-------------------
-void
-Scheduler::ReadyToRun (Thread *thread)
-{
-    DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
-    thread->setStatus(READY);
-    readyList->Append((void *)thread);
-}
-
-// // ------------------------* 基于优先级的调度算法 *-------------------
-// void Scheduler::ReadyToRun(Thread *thread)
+// void
+// Scheduler::ReadyToRun (Thread *thread)
 // {
-//     IntStatus oldLevel = interrupt->SetLevel(IntOff);
-//     // 判断一下当前线程优先级和CPU上的,直接抢占
-//     if(thread->base_priority < currentThread->base_priority){
-//         ReadyToRun(currentThread);
-//         Run(thread);
-//     }
-//     // 否则加入就绪队列
-//     else{
-//         thread->setStatus(READY);
-//         readyList->SortedInsert(thread, thread->base_priority);
-//     }
-//     (void) interrupt->SetLevel(oldLevel);
+//     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
+//     thread->setStatus(READY);
+//     readyList->Append((void *)thread);
 // }
+
+// // ------------------------* 多级队列反馈 调度算法 *-------------------
+void Scheduler::ReadyToRun(Thread *thread)
+{
+    // 把该线程插入到对应的优先级队列里
+    thread->setStatus(READY);
+    readyList[thread->current_priority]->Append((void *)thread);
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+}
 
 
 
@@ -86,12 +86,20 @@ Scheduler::ReadyToRun (Thread *thread)
 //	Thread is removed from the ready list.
 //----------------------------------------------------------------------
 
-// ------------------------* origin *-------------------
-// ------------------------* 基于优先级的调度 *-------------------
+
+// ------------------------* 多级队列反馈 调度算法 *-------------------
 Thread *
 Scheduler::FindNextToRun ()
 {
-    return (Thread *)readyList->Remove();
+    // 数字越小，优先级越高，所以优先执行小的
+    for(int i = 0;i < QUEUQ_NUM;i++){
+        Thread *next = (Thread *)readyList[i]->Remove();
+        if(next != NULL){
+            return next;
+        }
+    }
+    return NULL;
+    // return (Thread *)readyList->Remove();
 }
 
 
@@ -114,7 +122,6 @@ void
 Scheduler::Run (Thread *nextThread)
 {
     Thread *oldThread = currentThread;
-    
 #ifdef USER_PROGRAM			// ignore until running user programs 
     if (currentThread->space != NULL) {	// if this thread is a user program,
         currentThread->SaveUserState(); // save the user's CPU registers
@@ -146,7 +153,7 @@ Scheduler::Run (Thread *nextThread)
     // point, we were still running on the old thread's stack!
     if (threadToBeDestroyed != NULL) {
         delete threadToBeDestroyed;
-	threadToBeDestroyed = NULL;
+	   threadToBeDestroyed = NULL;
     }
     
 #ifdef USER_PROGRAM
@@ -166,5 +173,7 @@ void
 Scheduler::Print()
 {
     printf("Ready list contents:\n");
-    readyList->Mapcar((VoidFunctionPtr) ThreadPrint);
+    for(int i = 0;i < QUEUQ_NUM;i++){
+        readyList[i]->Mapcar((VoidFunctionPtr) ThreadPrint);
+    }
 }

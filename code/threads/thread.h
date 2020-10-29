@@ -107,10 +107,13 @@ class Thread {
     int getUid() { return uid;}
     void Print() { printf("%s, ", name); }
     int getTricks() { return tricks;}
+    int getBasePriority() { return base_priority;}
+    int getCurrentPriority() {return current_priority;}
 
     int pid;
     int uid;
     int base_priority;
+    int current_priority;
     int tricks;
 
   private:

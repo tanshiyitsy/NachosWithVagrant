@@ -43,6 +43,7 @@ Thread::Thread(char* threadName, int priority)
 
     tricks = 0;
     base_priority = priority;
+    current_priority = priority;
     //uid = getuid();  // 获取Linux当前的登录用户作为UID
     uid = 1;
     pid = -1;
@@ -72,7 +73,8 @@ Thread::Thread(char* threadName)
     status = JUST_CREATED;
 
     tricks = 0;
-    base_priority = 100;
+    base_priority = 1;
+    current_priority = 1;
     // uid = getuid();  // 获取Linux当前的登录用户作为UID
     uid = 1;
     pid = -1;

@@ -13,7 +13,7 @@
 #include "system.h"
 
 // testnum is set in main.cc
-int testnum = 2;
+int testnum = 3;
 
 //----------------------------------------------------------------------
 // SimpleThread
@@ -91,7 +91,11 @@ void TestTimeSlice(int time){
     for(int i = 0;i < time;i++){
         IntStatus oldLevel = interrupt->SetLevel(IntOff);
         (void)interrupt->SetLevel(oldLevel);
-        printf("current: name=%s pid=%d use_trick = %d loop time:%d\n", currentThread->getName(),currentThread->getPid(),currentThread->getTricks(),i+1);
+    //     int getBasePriority() { return base_priority;}
+    // int getCurrentPriority() {return current_priority;}
+        printf("current: name=%s pid=%d use_trick = %d loop time:%d base_priority:%d current_priority:%d\n", 
+            currentThread->getName(),currentThread->getPid(),currentThread->getTricks(),
+            i+1,currentThread->getBasePriority(),currentThread->getCurrentPriority());
     }
 }
 // ------------------------* time slice *-------------------
@@ -106,16 +110,30 @@ void ThreadTest2(){
 // ThreadTest
 // 	Invoke a test routine.
 //----------------------------------------------------------------------
+void ThreadTest3(){
+    Thread *t1 = new Thread("t1",2);
+    Thread *t2 = new Thread("t2",3);
+    // Thread *t3 = new Thread("t3",4);
+    t1->Fork(TestTimeSlice,11);
+    t2->Fork(TestTimeSlice,11);
+    TestTimeSlice(11);
 
+}
 void
 ThreadTest()
 {
     switch (testnum) {
         case 1:
+        // 测试lab1的
         	ThreadTest1();
         	break;
         case 2:
+        // 测试时间片算法的
             ThreadTest2();
+            break;
+        case 3:
+        // 测试多级队列反馈的
+            ThreadTest3();
             break;
         default:
         	printf("No test specified.\n");
