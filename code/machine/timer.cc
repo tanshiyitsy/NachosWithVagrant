@@ -40,7 +40,15 @@ static void TimerHandler(int arg)
 //      "doRandom" -- if true, arrange for the interrupts to occur
 //		at random, instead of fixed, intervals.
 //----------------------------------------------------------------------
-
+// 为什么不直接使用timerHandler作为中断处理函数？
+// 因为如果直接使用timerHandler，interrupt->Schedule是把一个时钟中断插入 中断等待队列
+// 一旦中断到来，立即进行中断处理，处理结束后并没有机会将下一个时钟中断插入到等待处理中断队列
+// 而TimerHandler内部函数正式处理这个问题
+// 当时钟中断时刻到来时，调用TimerHandler函数，其调用TimerExpired方法，该方法将新的时钟中断插入到等待处理中断队列中
+// 然后再调用真正的时钟中断处理函数。
+// 这样nachos就可以定时的收到时钟中断
+// 那为什么不将TimeExpired方法作为时钟中断在Timer的初始化函数中调用？
+// 因为C++语言不能直接引用一个类内部方法的指针
 Timer::Timer(VoidFunctionPtr timerHandler, int callArg, bool doRandom)
 {
     randomize = doRandom;
@@ -48,6 +56,7 @@ Timer::Timer(VoidFunctionPtr timerHandler, int callArg, bool doRandom)
     arg = callArg; 
 
     // schedule the first interrupt from the timer device
+    // Schedule(VoidFunctionPtr handler, int arg, int fromNow, IntType type)
     interrupt->Schedule(TimerHandler, (int) this, TimeOfNextInterrupt(), 
 		TimerInt); 
 }
@@ -78,6 +87,7 @@ Timer::TimerExpired()
 int 
 Timer::TimeOfNextInterrupt() 
 {
+    // TimerTicks = 100
     if (randomize)
 	return 1 + (Random() % (TimerTicks * 2));
     else

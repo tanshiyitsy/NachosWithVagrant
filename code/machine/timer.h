@@ -33,13 +33,16 @@ class Timer {
 
 // Internal routines to the timer emulation -- DO NOT call these
 
+    // 当时钟中断 发生时调用
     void TimerExpired();	// called internally when the hardware
 				// timer generates an interrupt
 
+    // 计算下一次时钟中断的发生时间
     int TimeOfNextInterrupt();  // figure out when the timer will generate
 				// its next interrupt 
 
   private:
+    // 是否需要随机时钟中断标志
     bool randomize;		// set if we need to use a random timeout delay
     VoidFunctionPtr handler;	// timer interrupt handler 
     int arg;			// argument to pass to interrupt handler

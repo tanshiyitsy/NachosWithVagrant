@@ -207,6 +207,11 @@ Interrupt::YieldOnReturn()
 //	If there are no pending interrupts, stop.  There's nothing
 //	more for us to do.
 //----------------------------------------------------------------------
+// 系统处于Idle状态时调用该方法，检查系统中是否有待处理的中断
+// 1. 如果有：
+//  1.1 将系统时钟调整到第一个待处理中断的发生时间，处理该中断（调用CheckIfDue，并将advanceClock设置为TRUE）
+//  1.2 处理在新的
+// 2. 如果没有，则退出系统
 void
 Interrupt::Idle()
 {
@@ -261,6 +266,7 @@ Interrupt::Halt()
 //		 interrupt is to occur
 //	"type" is the hardware device that generated the interrupt
 //----------------------------------------------------------------------
+// 将一个新的中断插入队列
 void
 Interrupt::Schedule(VoidFunctionPtr handler, int arg, int fromNow, IntType type)
 {
@@ -287,6 +293,21 @@ Interrupt::Schedule(VoidFunctionPtr handler, int arg, int fromNow, IntType type)
 //		interrupt is just the time-slice daemon, however, then 
 //		we're done!
 //----------------------------------------------------------------------
+// 参数advanceClock 时钟前进标志
+// 当系统处于Idle状态时，时钟直接跳到中断等待队列第一项规定的时间，是否需要这样做，由advanceClock决定
+// 1、在等待队列中取出第一项（最早会发生的中断）
+// 2、如果没有任何中断，直接返回
+// 3、如果该中断的时机还没有到
+//  3.1、 如果advanceClock未设置，将取出的中断返回原处，等待将来处理
+//  3.2、 如果advanceClock设置了，系统时间totalTicks跳到中断将要发生的时间，说明中断马上要发生了
+// 4、如果当前是Idle状态，并且取出的中断是时钟中断，同时等待队列中没有其他的中断，
+//    意味着系统将退出。但是系统的退出不在这里处理，而是将中断返回原处，等待以后处理
+// 5、 中断发生
+//  5.1、 inHandler标志设置，说明正在进行中断处理程序
+//  5.2、 status设置为系统态，因为中断处理程序是系统态的
+//  5.3、 进行中断处理程序的处理，直到结束
+//  5.4、 恢复虚拟机的status和inHandler标志
+// 返回：如果有需要处理的中断，返回True；否则返回FALSE
 bool
 Interrupt::CheckIfDue(bool advanceClock)
 {
