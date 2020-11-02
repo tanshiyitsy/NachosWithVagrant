@@ -26,7 +26,10 @@ static void Mult(int a, int b, bool signedArith, int* hiPtr, int* loPtr);
 //	This routine is re-entrant, in that it can be called multiple
 //	times concurrently -- one for each thread executing user code.
 //----------------------------------------------------------------------
-
+// 通过OneInstruction函数完成指令译码 和 执行
+// 通过oneTick函数使得时钟前进
+// 通过ReadMEM函数读取内存数据
+// 通过Write函数写内存数据
 void
 Machine::Run()
 {

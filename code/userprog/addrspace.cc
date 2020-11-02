@@ -65,6 +65,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     NoffHeader noffH;
     unsigned int i, size;
 
+    // 读取文件头，大小端做适宜转换
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) && 
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
@@ -72,9 +73,11 @@ AddrSpace::AddrSpace(OpenFile *executable)
     ASSERT(noffH.noffMagic == NOFFMAGIC);
 
 // how big is address space?
+    // 根据文件头计算文件所需空间,包括代码段,初始化数据段，未初始化数据段，和栈空间
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
 			+ UserStackSize;	// we need to increase the size
 						// to leave room for the stack
+    // 根据文件所需空间，计算出文件所需的虚拟页面数量
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
@@ -86,6 +89,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
 // first, set up the translation 
+    // 创建用户空间页表
+    // 第i个虚拟页对应第i个物理页
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
@@ -103,6 +108,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
+    // 把用户程序的正文段和相关数据依次调入内存
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);
@@ -143,19 +149,23 @@ AddrSpace::InitRegisters()
 {
     int i;
 
+    // 初始化普通寄存器为0
     for (i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister(i, 0);
 
     // Initial program counter -- must be location of "Start"
+    // 初始化当前指令指针PC，为0
     machine->WriteRegister(PCReg, 0);	
 
     // Need to also tell MIPS where next instruction is, because
     // of branch delay possibility
+    // 初始化下一条指令指针，为0
     machine->WriteRegister(NextPCReg, 4);
 
    // Set the stack register to the end of the address space, where we
    // allocated the stack; but subtract off a bit, to make sure we don't
    // accidentally reference off the end!
+    // 初始化栈指针，地址空间尾部适当前移
     machine->WriteRegister(StackReg, numPages * PageSize - 16);
     DEBUG('a', "Initializing stack register to %d\n", numPages * PageSize - 16);
 }
@@ -181,6 +191,7 @@ void AddrSpace::SaveState()
 
 void AddrSpace::RestoreState() 
 {
+    // 将页表装载到machine类中，准备执行用户程序
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
 }

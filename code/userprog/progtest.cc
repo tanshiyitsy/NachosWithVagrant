@@ -19,25 +19,31 @@
 // 	Run a user program.  Open the executable, load it into
 //	memory, and jump to it.
 //----------------------------------------------------------------------
-
+// 实现用户程序启动
+// 如果希望执行test
 void
 StartProcess(char *filename)
 {
-    OpenFile *executable = fileSystem->Open(filename);
+    // 打开相关文件
+    OpenFile *executable = fileSystem->Open(filename); 
     AddrSpace *space;
 
     if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
     }
+    // AddrSpace用于建立用户空间，装载文件
     space = new AddrSpace(executable);    
     currentThread->space = space;
 
     delete executable;			// close file
 
+    // 初始化用户寄存器
     space->InitRegisters();		// set the initial register values
+    // 装载页表
     space->RestoreState();		// load page table register
 
+    // 运行用户程序
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits

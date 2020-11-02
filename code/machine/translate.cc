@@ -83,7 +83,7 @@ ShortToMachine(unsigned short shortword) { return ShortToHost(shortword); }
 //	"size" -- the number of bytes to read (1, 2, or 4)
 //	"value" -- the place to write the result
 //----------------------------------------------------------------------
-
+// 参数：addr是逻辑地址
 bool
 Machine::ReadMem(int addr, int size, int *value)
 {
@@ -94,6 +94,7 @@ Machine::ReadMem(int addr, int size, int *value)
     DEBUG('a', "Reading VA 0x%x, size %d\n", addr, size);
     
     exception = Translate(addr, &physicalAddress, size, FALSE);
+    // 如果产生了异常，那么调用对应的异常处理器，通过调用RaiseException
     if (exception != NoException) {
 	machine->RaiseException(exception, addr);
 	return FALSE;
@@ -182,7 +183,9 @@ Machine::WriteMem(int addr, int size, int value)
 //	"size" -- the amount of memory being read or written
 // 	"writing" -- if TRUE, check the "read-only" bit in the TLB
 //----------------------------------------------------------------------
-
+// 遍历TLB数组。查找是否有对应映射
+// 如果有，那么TLB命中，直接进入物理地址转换
+// 否则，TLB没有命中，标志PageFaultException
 ExceptionType
 Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 {
@@ -205,6 +208,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 
 // calculate the virtual page number, and offset within the page,
 // from the virtual address
+    // 通过虚拟地址，得到vpn 和 offset
     vpn = (unsigned) virtAddr / PageSize;
     offset = (unsigned) virtAddr % PageSize;
     
