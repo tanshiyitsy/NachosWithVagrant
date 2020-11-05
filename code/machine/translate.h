@@ -27,6 +27,8 @@
 // In addition, there are some extra bits for access control (valid and 
 // read-only) and some bits for usage information (use and dirty).
 
+
+// 定义页表中每一个表项
 class TranslationEntry {
   public:
     int virtualPage;  	// The page number in virtual memory.

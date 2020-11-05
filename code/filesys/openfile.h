@@ -32,7 +32,13 @@ class OpenFile {
     ~OpenFile() { Close(file); }			// close the file
 
     int ReadAt(char *into, int numBytes, int position) { 
+        //     int retVal = lseek(fd, offset, whence);
+        // ASSERT(retVal >= 0);
+        //  whence为0 表示把文件偏移量 设置为position
     		Lseek(file, position, 0); 
+            // return read(fd, buffer, nBytes);
+            // fd是文件描述符，nBytes是请求读取的字节数
+            // 读取的数据保存在缓冲区中，同时文件的当前位置要往后移
 		return ReadPartial(file, into, numBytes); 
 		}	
     int WriteAt(char *from, int numBytes, int position) { 

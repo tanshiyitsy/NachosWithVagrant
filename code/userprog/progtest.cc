@@ -19,6 +19,7 @@
 // 	Run a user program.  Open the executable, load it into
 //	memory, and jump to it.
 //----------------------------------------------------------------------
+// 这是一个测试函数
 // 实现用户程序启动
 // 如果希望执行test
 void
@@ -44,6 +45,7 @@ StartProcess(char *filename)
     space->RestoreState();		// load page table register
 
     // 运行用户程序
+    // machine声明在threads/system.cc中
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits

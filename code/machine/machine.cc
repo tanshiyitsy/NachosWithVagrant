@@ -97,7 +97,11 @@ Machine::~Machine()
 //	"which" -- the cause of the kernel trap
 //	"badVaddr" -- the virtual address causing the trap, if appropriate
 //----------------------------------------------------------------------
-
+// 将出错陷入时用户程序的逻辑地址放到r39中
+// 执行一次延迟载入，以结束程序中所有运行着的指令
+// 通过中断调用，设置程序状态为系统态
+// 将异常处理转入到ExceptionHandler函数中进行处理
+// 通过中断调用，设置程序状态为用户态
 void
 Machine::RaiseException(ExceptionType which, int badVAddr)
 {

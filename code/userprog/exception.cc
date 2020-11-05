@@ -47,7 +47,9 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
-
+// 用来处理各类异常
+// 目前只处理了关机的
+// 其他没有实现
 void
 ExceptionHandler(ExceptionType which)
 {

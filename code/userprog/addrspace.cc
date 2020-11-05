@@ -62,11 +62,15 @@ SwapHeader (NoffHeader *noffH)
 
 AddrSpace::AddrSpace(OpenFile *executable)
 {
+    // 
     NoffHeader noffH;
     unsigned int i, size;
 
     // 读取文件头，大小端做适宜转换
+    // char *into, int numBytes, int position
+    // 第一个参数表示读取的内容存放的缓冲区，第三个参数表示初始偏移量
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
+    // 检查这个数和自己预想的是否一致，可以判断文件是否损坏
     if ((noffH.noffMagic != NOFFMAGIC) && 
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
     	SwapHeader(&noffH);
@@ -88,7 +92,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
-// first, set up the translation 
+    // first, set up the translation 
     // 创建用户空间页表
     // 第i个虚拟页对应第i个物理页
     pageTable = new TranslationEntry[numPages];

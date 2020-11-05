@@ -26,6 +26,7 @@ static void Mult(int a, int b, bool signedArith, int* hiPtr, int* loPtr);
 //	This routine is re-entrant, in that it can be called multiple
 //	times concurrently -- one for each thread executing user code.
 //----------------------------------------------------------------------
+// 设置成用户模式，并开始一个循环，不停地模拟取值、执行指令的操作
 // 通过OneInstruction函数完成指令译码 和 执行
 // 通过oneTick函数使得时钟前进
 // 通过ReadMEM函数读取内存数据
@@ -39,12 +40,13 @@ Machine::Run()
         printf("Starting thread \"%s\" at time %d\n",
 	       currentThread->getName(), stats->totalTicks);
     interrupt->setStatus(UserMode);
+    // 为什么这里还可以用无限循环
     for (;;) {
-        OneInstruction(instr);
-	interrupt->OneTick();
-	if (singleStep && (runUntilTime <= stats->totalTicks))
-	  Debugger();
-    }
+	        OneInstruction(instr);
+			interrupt->OneTick();
+			if (singleStep && (runUntilTime <= stats->totalTicks))
+			  Debugger();
+	  }
 }
 
 
@@ -96,14 +98,20 @@ TypeToReg(RegType reg, Instruction *instr)
 void
 Machine::OneInstruction(Instruction *instr)
 {
+	// Instruction的定义在machine.h中
     int raw;
     int nextLoadReg = 0; 	
     int nextLoadValue = 0; 	// record delayed load operation, to apply
 				// in the future
 
     // Fetch instruction 
+    // register是machine类型的一个私有变量
+    // 把下一条指令取出来 放到raw
+    // 在这里面涉及到地址转换
     if (!machine->ReadMem(registers[PCReg], 4, &raw))
 	return;			// exception occurred
+
+	// instr 的其他值是什么时候被赋予的？decode函数被调用时
     instr->value = raw;
     instr->Decode();
 

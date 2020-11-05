@@ -183,6 +183,8 @@ Machine::WriteMem(int addr, int size, int value)
 //	"size" -- the amount of memory being read or written
 // 	"writing" -- if TRUE, check the "read-only" bit in the TLB
 //----------------------------------------------------------------------
+// 实际系统中，地址转换可以为线性页面地址转换 或者 TLB页面地址转换
+// nachos使用的线性页面地址转换
 // 遍历TLB数组。查找是否有对应映射
 // 如果有，那么TLB命中，直接进入物理地址转换
 // 否则，TLB没有命中，标志PageFaultException
@@ -197,12 +199,17 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     DEBUG('a', "\tTranslate 0x%x, %s: ", virtAddr, writing ? "write" : "read");
 
 // check for alignment errors
+    // 检查用户的逻辑地址是否对齐
+    // 如果size为4，但是虚拟地址为3
+    // 或者size为2 而虚拟地址为1  则逻辑地址没有对齐
+    // 返回用于定义页面访问没有对齐 或 超出了页面大小的异常
     if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
 	DEBUG('a', "alignment problem at %d, size %d!\n", virtAddr, size);
 	return AddressErrorException;
     }
     
     // we must have either a TLB or a page table, but not both!
+    // 确保TLB表 或 线性页面转换表有且只有一项不为空
     ASSERT(tlb == NULL || pageTable == NULL);	
     ASSERT(tlb != NULL || pageTable != NULL);	
 
@@ -213,17 +220,21 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     offset = (unsigned) virtAddr % PageSize;
     
     if (tlb == NULL) {		// => page table => vpn is index into table
+	// 如果系统使用的是线性页面转换表
+    	// 首先需要判断vpn的大小是否大于等于pageTableSize
 	if (vpn >= pageTableSize) {
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
 			virtAddr, pageTableSize);
 	    return AddressErrorException;
 	} else if (!pageTable[vpn].valid) {
+		// 其次判断VPN对应的页表项是否有效
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
 			virtAddr, pageTableSize);
 	    return PageFaultException;
 	}
 	entry = &pageTable[vpn];
     } else {
+    	// 这里使用的是TLB转换方式
         for (entry = NULL, i = 0; i < TLBSize; i++)
     	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
 		entry = &tlb[i];			// FOUND!
@@ -245,6 +256,8 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 
     // if the pageFrame is too big, there is something really wrong! 
     // An invalid translation was loaded into the page table or TLB. 
+    // 如果所得到的的相应的页表表项中的物理地址 大于 实际现存的物理地址
+    // 则返回总线错误
     if (pageFrame >= NumPhysPages) { 
 	DEBUG('a', "*** frame %d > %d!\n", pageFrame, NumPhysPages);
 	return BusErrorException;
@@ -252,6 +265,8 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     entry->use = TRUE;		// set the use, dirty bits
     if (writing)
 	entry->dirty = TRUE;
+	// 如果这里采用的是TLB转换表，查找TLB表
+	// 搜索成功后，获得页表项的指针，取出对应的物理页框号
     *physAddr = pageFrame * PageSize + offset;
     ASSERT((*physAddr >= 0) && ((*physAddr + size) <= MemorySize));
     DEBUG('a', "phys addr = 0x%x\n", *physAddr);
