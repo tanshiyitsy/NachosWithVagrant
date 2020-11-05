@@ -23,6 +23,7 @@
 void
 StartProcess(char *filename)
 {
+    printf("noe in StartProcess\n");
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
