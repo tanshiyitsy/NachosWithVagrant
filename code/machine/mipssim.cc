@@ -566,6 +566,7 @@ Machine::OneInstruction(Instruction *instr)
     // Now we have successfully executed the instruction.
     
     // Do any delayed load operation
+    // MIPS is a RISC machine which supports delayed load
     DelayedLoad(nextLoadReg, nextLoadValue);
     
     // Advance program counters.
