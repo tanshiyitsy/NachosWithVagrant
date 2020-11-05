@@ -66,8 +66,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     unsigned int i, size;
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
-    printf("noffMagic = %d NOFFMAGIC=%d\n", noffH.noffMagic,NOFFMAGIC);
-    // noffH.noffMagic = NOFFMAGIC;
+
     if ((noffH.noffMagic != NOFFMAGIC) && 
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
     	{
