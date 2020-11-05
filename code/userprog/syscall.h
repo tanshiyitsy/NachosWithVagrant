@@ -18,6 +18,8 @@
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
  */
+// 共有11个系统调用类型
+// 异常类型定义在machine.h中
 #define SC_Halt		0
 #define SC_Exit		1
 #define SC_Exec		2
@@ -42,6 +44,7 @@
  * from the system call entry point in exception.cc.
  */
 
+// 下面这些系统调用在start.s中实现
 /* Stop Nachos, and print out performance stats */
 void Halt();		
  

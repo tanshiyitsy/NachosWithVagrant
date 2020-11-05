@@ -94,7 +94,9 @@ TypeToReg(RegType reg, Instruction *instr)
 //	by controlling the contents of memory, the translation table,
 //	and the register set.
 //----------------------------------------------------------------------
-
+// 下面方法中，异常如果产生的话，异常处理结果后
+// 调用的都是return，而不是break
+// 所以PC指针没有递增，所以相同的指令会被再次执行
 void
 Machine::OneInstruction(Instruction *instr)
 {

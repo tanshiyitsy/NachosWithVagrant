@@ -15,6 +15,7 @@
 int
 main()
 {
+	// 这是一个系统调用，执行完后，会陷入内核
     Halt();
     /* not reached */
 }
