@@ -37,14 +37,20 @@ class BitMap {
 				// initially, all bits are cleared.
     ~BitMap();			// De-allocate bitmap
     
+    // 标志which位被占用
     void Mark(int which);   	// Set the "nth" bit
+    // 清楚which位
     void Clear(int which);  	// Clear the "nth" bit
+    // 测试which位是否被占用，返回true表示被占用
     bool Test(int which);   	// Is the "nth" bit set?
+    // 找到第一个未被占用的位，并标志为占用；返回-1表示未找到
     int Find();            	// Return the # of a clear bit, and as a side
 				// effect, set the bit. 
 				// If no bits are clear, return -1.
+    // 返回多少位没有被占用
     int NumClear();		// Return the number of clear bits
 
+    // 打印整个位图
     void Print();		// Print contents of bitmap
     
     // These aren't needed until FILESYS, when we will need to read and 
