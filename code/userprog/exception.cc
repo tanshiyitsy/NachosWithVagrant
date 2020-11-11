@@ -47,21 +47,30 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
+void PageFaultHandler(){
+    int badVAddr = machine->ReadRegister(39); // registers[BadVAddrReg]
+    // ExceptionType FIFOSwap(int virtAddr)
+    // ExceptionType exception = machine->FIFOSwap(badVAddr);
+    ExceptionType exception = machine->LRUSwap(badVAddr);
+    // RaiseException(ExceptionType which, int badVAddr)
+    if(exception != NoException)
+        machine->RaiseException(exception,badVAddr);
 
+}
 void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
 
-    printf("which=%d type=%d\n", which,type);
     if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
+    	DEBUG('a', "Shutdown, initiated by user program.\n");
+       	interrupt->Halt();
     } 
-    if ((which == SyscallException) && (type == SC_Exit)) {
-		// DEBUG('a', "Shutdown, initiated by user program.\n");
-	 	//   	interrupt->Halt();
-    } 
+    // pageFadult去页表里查找
+    // 页表里默认有所有滴的数据代码
+    else if(which == PageFaultException){
+        PageFaultHandler();
+    }
     else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);

@@ -30,7 +30,7 @@
 
 #define PageSize 	SectorSize 	// set the page size equal to
 					// the disk sector size, for
-					// simplicity
+					// simplicity 128
 
 #define NumPhysPages    32
 #define MemorySize 	(NumPhysPages * PageSize)
@@ -126,6 +126,7 @@ class Machine {
     void DelayedLoad(int nextReg, int nextVal);  	
 				// Do a pending delayed load (modifying a reg)
     
+    // readMem的实现在translate.cc文件中
     bool ReadMem(int addr, int size, int* value);
     bool WriteMem(int addr, int size, int value);
     				// Read or write 1, 2, or 4 bytes of virtual 
@@ -138,11 +139,11 @@ class Machine {
 				// the translation entry appropriately,
     				// and return an exception code if the 
 				// translation couldn't be completed.
-
+    ExceptionType FIFOSwap(int virtAddr);
+    ExceptionType LRUSwap(int virtAddr);
     void RaiseException(ExceptionType which, int badVAddr);
 				// Trap to the Nachos kernel, because of a
 				// system call or other exception.  
-
     void Debugger();		// invoke the user program debugger
     void DumpState();		// print the user CPU and memory state 
 
@@ -152,9 +153,10 @@ class Machine {
 //
 // Note that *all* communication between the user program and the kernel 
 // are in terms of these data structures.
-
+    // 主存
     char *mainMemory;		// physical memory to store user program,
 				// code and data, while executing
+    // 用户寄存器
     int registers[NumTotalRegs]; // CPU registers, for executing user programs
 
 
@@ -176,9 +178,10 @@ class Machine {
 // Thus the TLB pointer should be considered as *read-only*, although 
 // the contents of the TLB are free to be modified by the kernel software.
 
+    // 快表
     TranslationEntry *tlb;		// this pointer should be considered 
 					// "read-only" to Nachos kernel code
-
+    // 当前进程页表
     TranslationEntry *pageTable;
     unsigned int pageTableSize;
 

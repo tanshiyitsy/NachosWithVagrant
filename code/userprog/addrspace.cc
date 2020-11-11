@@ -75,11 +75,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
         }
     ASSERT(noffH.noffMagic == NOFFMAGIC);
 
-// how big is address space?
+    // how big is address space?
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
 			+ UserStackSize;	// we need to increase the size
 						// to leave room for the stack
     numPages = divRoundUp(size, PageSize);
+    // 页大小128,数量为32，内存大小128*32
+    // 这里size = 1280, numPages = 10
+    printf("size=%d numPages=%d\n", size,numPages);
     size = numPages * PageSize;
 
     ASSERT(numPages <= NumPhysPages);		// check we're not trying
@@ -100,6 +103,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
 					// a separate page, we could set its 
 					// pages to be read-only
+    pageTable[i].createTime = 0;
+    pageTable[i].visitTime = 0;
     }
     
 // zero out the entire address space, to zero the unitialized data segment 
@@ -119,7 +124,6 @@ AddrSpace::AddrSpace(OpenFile *executable)
         executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
-
 }
 
 //----------------------------------------------------------------------

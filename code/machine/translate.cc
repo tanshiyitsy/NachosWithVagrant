@@ -83,7 +83,7 @@ ShortToMachine(unsigned short shortword) { return ShortToHost(shortword); }
 //	"size" -- the number of bytes to read (1, 2, or 4)
 //	"value" -- the place to write the result
 //----------------------------------------------------------------------
-
+// machine->ReadMem(registers[PCReg], 4, &raw)
 bool
 Machine::ReadMem(int addr, int size, int *value)
 {
@@ -94,6 +94,7 @@ Machine::ReadMem(int addr, int size, int *value)
     DEBUG('a', "Reading VA 0x%x, size %d\n", addr, size);
     
     exception = Translate(addr, &physicalAddress, size, FALSE);
+    // printf("VA=%d PA=%d\n", addr, physicalAddress);
     if (exception != NoException) {
 	machine->RaiseException(exception, addr);
 	return FALSE;
@@ -117,6 +118,7 @@ Machine::ReadMem(int addr, int size, int *value)
       default: ASSERT(FALSE);
     }
     
+    // printf("raw data = %d value=%d\n", data,*value);
     DEBUG('a', "\tvalue read = %8.8x\n", *value);
     return (TRUE);
 }
@@ -200,16 +202,70 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     }
     
     // we must have either a TLB or a page table, but not both!
-    ASSERT(tlb == NULL || pageTable == NULL);	
-    ASSERT(tlb != NULL || pageTable != NULL);	
+    // ASSERT(tlb == NULL || pageTable == NULL);	
+    ASSERT(tlb != NULL || pageTable != NULL);
+
 
 // calculate the virtual page number, and offset within the page,
 // from the virtual address
     vpn = (unsigned) virtAddr / PageSize;
     offset = (unsigned) virtAddr % PageSize;
     
-    if (tlb == NULL) {		// => page table => vpn is index into table
-	if (vpn >= pageTableSize) {
+    for (entry = NULL, i = 0; i < TLBSize; i++){
+    	if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
+			entry = &tlb[i];			// FOUND!
+			break;
+	 	}
+    }
+	    
+	if (entry == NULL) {				// not found
+    	    DEBUG('a', "*** no valid TLB entry found for this virtual page!\n");
+    	    printf("*** no valid TLB entry found for this virtual page!\n");
+    	    return PageFaultException;		// really, this is a TLB fault,
+						// the page may be in memory,
+						// but not in the TLB
+	}
+	// else 就是找到了
+    if (entry->readOnly && writing) {	// trying to write to a read-only page
+		DEBUG('a', "%d mapped read-only at %d in TLB!\n", virtAddr, i);
+		return ReadOnlyException;
+    }
+    pageFrame = entry->physicalPage;
+    // if the pageFrame is too big, there is something really wrong! 
+    // An invalid translation was loaded into the page table or TLB. 
+    if (pageFrame >= NumPhysPages) { 
+	DEBUG('a', "*** frame %d > %d!\n", pageFrame, NumPhysPages);
+	return BusErrorException;
+    }
+
+    entry->use = TRUE;		// set the use, dirty bits
+    if (writing)
+	entry->dirty = TRUE;
+	entry->visitTime = stats->totalTicks;
+	// printf("find the page in tlb,renew the visitTime = %d\n",entry->visitTime);
+    *physAddr = pageFrame * PageSize + offset;
+    ASSERT((*physAddr >= 0) && ((*physAddr + size) <= MemorySize));
+    DEBUG('a', "phys addr = 0x%x\n", *physAddr);
+    return NoException;
+}
+
+// 这个方法
+// 1. 查找页表
+// 2. 更新快表
+// 3. FIFO需要记录来到的次序
+ExceptionType Machine::FIFOSwap(int virtAddr){
+	
+	// printf("now in FIFOSwap\n");
+	ASSERT(pageTable != NULL);
+	int i;
+    unsigned int vpn, offset;
+    TranslationEntry *entry;
+
+    vpn = (unsigned) virtAddr / PageSize;
+    offset = (unsigned) virtAddr % PageSize;
+
+    // 1. 找页表pageTable
+    if (vpn >= pageTableSize) {
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
 			virtAddr, pageTableSize);
 	    return AddressErrorException;
@@ -218,38 +274,91 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 			virtAddr, pageTableSize);
 	    return PageFaultException;
 	}
+	
+	
 	entry = &pageTable[vpn];
-    } else {
-        for (entry = NULL, i = 0; i < TLBSize; i++)
-    	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
-		entry = &tlb[i];			// FOUND!
-		break;
-	    }
-	if (entry == NULL) {				// not found
-    	    DEBUG('a', "*** no valid TLB entry found for this virtual page!\n");
-    	    return PageFaultException;		// really, this is a TLB fault,
-						// the page may be in memory,
-						// but not in the TLB
+
+	// 2. 更新tlb
+	// 2.1 优先找无效的页进行覆盖
+	int index = -1,min = tlb[0].createTime;
+	for(i=0;i < TLBSize;i++){
+		if(tlb[i].valid == FALSE){
+			index = i;
+			break;
+		}
 	}
-    }
+	if(index == -1){
+		// 2.2 当前tlb全部都有效，找createTIME最小的进行替换
+		for(i=0;i < TLBSize;i++){
+			printf("i=%d min=%d tlb.createTime=%d\n", i,min,tlb[i].createTime);
+			if(tlb[i].createTime <= min){
+				min = tlb[i].createTime;
+				index = i;
+			}
+		}
+	}
+	// else 找到了无效的页，可以直接进行替换
+	
+	tlb[index] = *entry;
+	// 2.3 更新来到时间
+	tlb[index].createTime = stats->totalTicks;
+	printf("index %d page will be coverd,new virtualPage=%d createTime=%d\n", index,tlb[index].virtualPage,tlb[index].createTime);
+	
 
-    if (entry->readOnly && writing) {	// trying to write to a read-only page
-	DEBUG('a', "%d mapped read-only at %d in TLB!\n", virtAddr, i);
-	return ReadOnlyException;
-    }
-    pageFrame = entry->physicalPage;
+	return NoException;
+}
 
-    // if the pageFrame is too big, there is something really wrong! 
-    // An invalid translation was loaded into the page table or TLB. 
-    if (pageFrame >= NumPhysPages) { 
-	DEBUG('a', "*** frame %d > %d!\n", pageFrame, NumPhysPages);
-	return BusErrorException;
-    }
-    entry->use = TRUE;		// set the use, dirty bits
-    if (writing)
-	entry->dirty = TRUE;
-    *physAddr = pageFrame * PageSize + offset;
-    ASSERT((*physAddr >= 0) && ((*physAddr + size) <= MemorySize));
-    DEBUG('a', "phys addr = 0x%x\n", *physAddr);
-    return NoException;
+
+ExceptionType Machine::LRUSwap(int virtAddr){
+	// printf("now in LRUSwap\n");
+	ASSERT(pageTable != NULL);
+	int i;
+    unsigned int vpn, offset;
+    TranslationEntry *entry;
+
+    vpn = (unsigned) virtAddr / PageSize;
+    offset = (unsigned) virtAddr % PageSize;
+
+    // 1. 找页表pageTable
+    if (vpn >= pageTableSize) {
+	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
+			virtAddr, pageTableSize);
+	    return AddressErrorException;
+	} else if (!pageTable[vpn].valid) {
+	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
+			virtAddr, pageTableSize);
+	    return PageFaultException;
+	}
+	
+	
+	entry = &pageTable[vpn];
+
+	// 2. 更新tlb
+	// 2.1 优先找无效的页进行覆盖
+	int index = -1,min = tlb[0].visitTime;
+	for(i=0;i < TLBSize;i++){
+		if(tlb[i].valid == FALSE){
+			index = i;
+			break;
+		}
+	}
+	if(index == -1){
+		// 2.2 当前tlb全部都有效，找visitTIME最小的进行替换
+		for(i=0;i < TLBSize;i++){
+			printf("i=%d min=%d tlb.visitTime=%d\n", i,min,tlb[i].visitTime);
+			if(tlb[i].visitTime <= min){
+				min = tlb[i].visitTime;
+				index = i;
+			}
+		}
+	}
+	// else 找到了无效的页，可以直接进行替换
+	
+	tlb[index] = *entry;
+	// 2.3 更新来到时间
+	tlb[index].visitTime = stats->totalTicks;
+	printf("index %d page will be coverd,new virtualPage=%d visitTime=%d\n", index,tlb[index].virtualPage,tlb[index].visitTime);
+	
+
+	return NoException;
 }

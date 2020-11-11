@@ -60,7 +60,7 @@ extern void Cleanup();
 static void
 TimerInterruptHandler(int dummy)
 {
-    printf("here is a TimerInterruptHandler,will switch the thread\n");
+    // printf("here is a TimerInterruptHandler,will switch the thread\n");
     // yield
     if (interrupt->getStatus() != IdleMode)
 	interrupt->YieldOnReturn();

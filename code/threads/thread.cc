@@ -242,9 +242,6 @@ Thread::Yield ()
     	scheduler->ReadyToRun(this);
     	scheduler->Run(nextThread);
     }
-    else{
-        printf("the nextThread is NULL\n");
-    }
     (void) interrupt->SetLevel(oldLevel);
 }
 

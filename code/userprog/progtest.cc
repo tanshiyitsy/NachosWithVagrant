@@ -31,8 +31,7 @@ StartProcess(char *filename)
 	printf("Unable to open file %s\n", filename);
 	return;
     }
-    space = new AddrSpace(executable); 
-    printf("now have allocate the AddrSpace\n");   
+    space = new AddrSpace(executable);    
     currentThread->space = space;
 
     delete executable;			// close file

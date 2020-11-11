@@ -38,10 +38,10 @@ Machine::Run()
     interrupt->setStatus(UserMode);
     for (;;) {
         OneInstruction(instr);
-	interrupt->OneTick();
-	if (singleStep && (runUntilTime <= stats->totalTicks))
-	  Debugger();
-    }
+		interrupt->OneTick();
+		if (singleStep && (runUntilTime <= stats->totalTicks))
+		  Debugger();
+	}
 }
 
 
@@ -101,7 +101,8 @@ Machine::OneInstruction(Instruction *instr)
     // Fetch instruction 
     if (!machine->ReadMem(registers[PCReg], 4, &raw))
 	return;			// exception occurred
-    instr->value = raw;
+	
+    instr->value = raw; // 这里的raw全是数字
     instr->Decode();
 
     if (DebugIsEnabled('m')) {
@@ -119,6 +120,8 @@ Machine::OneInstruction(Instruction *instr)
     int sum, diff, tmp, value;
     unsigned int rs, rt, imm;
 
+    // printf("opCode=%d rs=%d rt=%d\n", instr->opCode,registers[instr->rs],registers[instr->rt]);
+    
     // Execute the instruction (cf. Kane's book)
     switch (instr->opCode) {
 	

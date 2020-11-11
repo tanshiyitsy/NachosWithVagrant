@@ -40,6 +40,8 @@ class TranslationEntry {
 			// page is referenced or modified.
     bool dirty;         // This bit is set by the hardware every time the
 			// page is modified.
+    int createTime; // 用于FIFO的置换算法，记录谁先来的
+    int visitTime; // 用于LRU置换算法，记录最近一次访问时间
 };
 
 #endif
