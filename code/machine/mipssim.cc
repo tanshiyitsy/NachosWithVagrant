@@ -535,6 +535,8 @@ Machine::OneInstruction(Instruction *instr)
 	break;
     	
       case OP_SYSCALL:
+      // printf("last op\n");
+      // 最后一个异常是在这里抛出的
 	RaiseException(SyscallException, 0);
 	return; 
 	

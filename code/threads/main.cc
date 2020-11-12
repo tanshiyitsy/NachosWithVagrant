@@ -64,6 +64,7 @@ extern Thread *thread_pool[PID_MAX];
 extern void ThreadTest(void), Copy(char *unixFile, char *nachosFile);
 extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
+extern void MultiUserProcess();
 extern void MailTest(int networkID);
 
 //----------------------------------------------------------------------
@@ -117,17 +118,17 @@ main(int argc, char **argv)
 		argCount = 1;
         if (!strcmp(*argv, "-z"))               // print copyright
             printf (copyright);
-#ifdef USER_PROGRAM
-        printf("now in user mode\n");
+#ifdef USER_PROGRAM   
         if (!strcmp(*argv, "-x")) {        	// run a user program
-	    ASSERT(argc > 1);
+	          ASSERT(argc > 1);
             StartProcess(*(argv + 1));
+            // MultiUserProcess();
             argCount = 2;
         } else if (!strcmp(*argv, "-c")) {      // test the console
 	    if (argc == 1)
 	        ConsoleTest(NULL, NULL);
 	    else {
-		ASSERT(argc > 2);
+		      ASSERT(argc > 2);
 	        ConsoleTest(*(argv + 1), *(argv + 2));
 	        argCount = 3;
 	    }

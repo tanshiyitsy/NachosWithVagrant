@@ -101,19 +101,19 @@ Machine::ReadMem(int addr, int size, int *value)
     }
     switch (size) {
       case 1:
-	data = machine->mainMemory[physicalAddress];
-	*value = data;
-	break;
+		data = machine->mainMemory[physicalAddress];
+		*value = data;
+		break;
 	
       case 2:
-	data = *(unsigned short *) &machine->mainMemory[physicalAddress];
-	*value = ShortToHost(data);
-	break;
+		data = *(unsigned short *) &machine->mainMemory[physicalAddress];
+		*value = ShortToHost(data);
+		break;
 	
       case 4:
-	data = *(unsigned int *) &machine->mainMemory[physicalAddress];
-	*value = WordToHost(data);
-	break;
+		data = *(unsigned int *) &machine->mainMemory[physicalAddress];
+		*value = WordToHost(data);
+		break;
 
       default: ASSERT(FALSE);
     }
@@ -220,7 +220,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 	    
 	if (entry == NULL) {				// not found
     	    DEBUG('a', "*** no valid TLB entry found for this virtual page!\n");
-    	    printf("*** no valid TLB entry found for this virtual page!\n");
+    	    // printf("*** no valid TLB entry found for this virtual page!\n");
     	    return PageFaultException;		// really, this is a TLB fault,
 						// the page may be in memory,
 						// but not in the TLB
@@ -290,7 +290,7 @@ ExceptionType Machine::FIFOSwap(int virtAddr){
 	if(index == -1){
 		// 2.2 当前tlb全部都有效，找createTIME最小的进行替换
 		for(i=0;i < TLBSize;i++){
-			printf("i=%d min=%d tlb.createTime=%d\n", i,min,tlb[i].createTime);
+			// printf("i=%d min=%d tlb.createTime=%d\n", i,min,tlb[i].createTime);
 			if(tlb[i].createTime <= min){
 				min = tlb[i].createTime;
 				index = i;
@@ -302,7 +302,7 @@ ExceptionType Machine::FIFOSwap(int virtAddr){
 	tlb[index] = *entry;
 	// 2.3 更新来到时间
 	tlb[index].createTime = stats->totalTicks;
-	printf("index %d page will be coverd,new virtualPage=%d createTime=%d\n", index,tlb[index].virtualPage,tlb[index].createTime);
+	// printf("index %d page will be coverd,new virtualPage=%d createTime=%d\n", index,tlb[index].virtualPage,tlb[index].createTime);
 	
 
 	return NoException;
@@ -310,7 +310,7 @@ ExceptionType Machine::FIFOSwap(int virtAddr){
 
 
 ExceptionType Machine::LRUSwap(int virtAddr){
-	// printf("now in LRUSwap\n");
+	printf("now started PageFaultException handler\n");
 	ASSERT(pageTable != NULL);
 	int i;
     unsigned int vpn, offset;
@@ -325,12 +325,43 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 			virtAddr, pageTableSize);
 	    return AddressErrorException;
 	} else if (!pageTable[vpn].valid) {
-	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-			virtAddr, pageTableSize);
-	    return PageFaultException;
+	  	//   DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
+			// virtAddr, pageTableSize);
+	    // return PageFaultException;
+	    // 不在页表里，去内存里拿
+		// 1. 分配物理页框
+		// 这里还要考虑分配失败的情况，如果失败的话要置换页面
+		printf("not hint the pageTable\n");
+		int pn = bitmap->Find();
+		if(pn == -1){
+			// 分配失败
+			int min = pageTable[0].visitTime,index = 0;
+			// 找拥有物理页框的页面进行覆盖
+			for(int i = 0;i < pageTableSize;i++){
+				if(pageTable[i].physicalPage != -1){
+					index = i;
+				}
+			}
+			printf("index = %d pageTable[index].physicalPage=%d\n", index,pageTable[index].physicalPage);
+			pageTable[index].valid = FALSE;
+			pn = pageTable[index].physicalPage;
+			pageTable[index].physicalPage = -1;
+		}
+	
+		printf("successfully to allocate the bitmap,the pn is %d,va is %d\n",pn,vpn);
+		// 2. 读取一页的内容进来
+		OpenFile *openfile = fileSystem->Open("virtual_memory");
+		openfile->ReadAt(&(machine->mainMemory[pn * PageSize]),PageSize,vpn * PageSize);
+		pageTable[vpn].physicalPage = pn;
+		pageTable[vpn].valid = TRUE;
+		pageTable[vpn].visitTime = stats->totalTicks;
+		
+	}
+	else{
+		printf("hint the pageTable\n");
 	}
 	
-	
+	// 原来是直接使用，假设已经存在；现在要判断一下
 	entry = &pageTable[vpn];
 
 	// 2. 更新tlb
@@ -345,7 +376,7 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 	if(index == -1){
 		// 2.2 当前tlb全部都有效，找visitTIME最小的进行替换
 		for(i=0;i < TLBSize;i++){
-			printf("i=%d min=%d tlb.visitTime=%d\n", i,min,tlb[i].visitTime);
+			// printf("i=%d min=%d tlb.visitTime=%d\n", i,min,tlb[i].visitTime);
 			if(tlb[i].visitTime <= min){
 				min = tlb[i].visitTime;
 				index = i;
@@ -354,11 +385,11 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 	}
 	// else 找到了无效的页，可以直接进行替换
 	
-	tlb[index] = *entry;
 	// 2.3 更新来到时间
-	tlb[index].visitTime = stats->totalTicks;
-	printf("index %d page will be coverd,new virtualPage=%d visitTime=%d\n", index,tlb[index].virtualPage,tlb[index].visitTime);
+	entry->visitTime = stats->totalTicks;
+	tlb[index] = *entry;
+	printf("index %d page will be coverd,new virtualPage=%d physicalPage=%d visitTime=%d\n", 
+		index,tlb[index].virtualPage,tlb[index].physicalPage,tlb[index].visitTime);
 	
-
 	return NoException;
 }
