@@ -23,13 +23,12 @@
 void
 StartProcess(char *filename)
 {
-    printf("noe in StartProcess\n");
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
     if (executable == NULL) {
-	printf("Unable to open file %s\n", filename);
-	return;
+    	printf("Unable to open file %s\n", filename);
+    	return;
     }
     space = new AddrSpace(executable);    
     currentThread->space = space;
@@ -45,6 +44,43 @@ StartProcess(char *filename)
 					// by doing the syscall "exit"
 }
 
+void simpleTest(int which){
+    machine->Run();         // jump to the user progam
+}
+void createSingleUserProcess(char *filename){
+    // 1. 创建用户空间
+    printf("start to run filename=%s\n", filename);
+    OpenFile *executable = fileSystem->Open(filename);
+    if (executable == NULL) {
+        printf("Unable to open file %s\n", filename);
+        return;
+    }
+    AddrSpace *space = new AddrSpace(executable);   
+    delete executable;          // close file
+    
+    //2. 创建用户进程 
+    Thread *t1 = new Thread(filename);
+    t1->space = space;
+    
+    space->InitRegisters();     // set the initial register values
+    space->RestoreState();      // load page table register
+
+    t1->Fork(simpleTest,0);
+    
+}
+void MultiUserProcess(){
+    char *filename1 = "../test/halt.noff";
+    char *filename2 = "../test/sort.noff";
+    createSingleUserProcess(filename1);
+    createSingleUserProcess(filename2);
+
+    for(int i = 0;i < 2;i++){
+        printf("thread name:%s pid:%d uid:%d priority:%d\n", currentThread->getName(), 
+            currentThread->getPid(), currentThread->getUid(), currentThread->base_priority);
+            // 每运行一次当前线程，就让出CPU，让另一个线程继续执行
+            currentThread->Yield();
+    }
+}
 // Data structures needed for the console test.  Threads making
 // I/O requests wait on a Semaphore to delay until the I/O completes.
 

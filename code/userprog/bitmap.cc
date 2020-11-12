@@ -20,6 +20,7 @@
 BitMap::BitMap(int nitems) 
 { 
     numBits = nitems;
+    // #define divRoundUp(n,s)    (((n) / (s)) + ((((n) % (s)) > 0) ? 1 : 0))
     numWords = divRoundUp(numBits, BitsInWord);
     map = new unsigned int[numWords];
     for (int i = 0; i < numBits; i++) 

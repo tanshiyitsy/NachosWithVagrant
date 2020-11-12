@@ -49,27 +49,69 @@
 //----------------------------------------------------------------------
 void PageFaultHandler(){
     int badVAddr = machine->ReadRegister(39); // registers[BadVAddrReg]
-    // ExceptionType FIFOSwap(int virtAddr)
     // ExceptionType exception = machine->FIFOSwap(badVAddr);
     ExceptionType exception = machine->LRUSwap(badVAddr);
-    // RaiseException(ExceptionType which, int badVAddr)
     if(exception != NoException)
         machine->RaiseException(exception,badVAddr);
 
+}
+void UserProgClear(){
+    // TranslationEntry *pageTable;
+    // unsigned int pageTableSize;
+    int pageTableSize = machine->pageTableSize;
+    TranslationEntry *pageTable = machine->pageTable;
+    printf("start to clear bitmap,and clear the pageTable\n");
+    for(int i = 0;i < pageTableSize;i++){
+        // 清除位图标志
+        int pn = pageTable[i].physicalPage;
+        if(pn >= 0){
+            printf("clear the memory of bitmap is %d\n", pageTable[i].physicalPage);
+            bitmap->Clear(pageTable[i].physicalPage);
+            // 清除pageTable映射
+            pageTable[i].virtualPage = i;
+            pageTable[i].physicalPage = -1;
+            pageTable[i].valid = FALSE;
+            pageTable[i].use = FALSE;
+            pageTable[i].dirty = FALSE;
+            pageTable[i].readOnly = FALSE;
+            pageTable[i].createTime = 0;
+            pageTable[i].visitTime = 0;
+        }
+        // else pn == -1   这种情况说明该页面长时间没被访问，页框被其他页面占用了，该页面就不在内存了，所以无需清除
+
+        
+        
+    }
+    
 }
 void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
-
+    ExceptionType temp = NoException;
+    // printf("which=%d type=%d\n", which,type);
     if ((which == SyscallException) && (type == SC_Halt)) {
     	DEBUG('a', "Shutdown, initiated by user program.\n");
+        UserProgClear();
        	interrupt->Halt();
     } 
     // pageFadult去页表里查找
     // 页表里默认有所有滴的数据代码
     else if(which == PageFaultException){
         PageFaultHandler();
+    }
+    else if((which == SyscallException) && (type == SC_Exit)){
+        printf("this prog is going to exit\n");
+        UserProgClear();
+    }
+    else if((which ==  AddressErrorException) && (type == SC_Halt)){
+        printf("AddressErrorException\n");
+        UserProgClear();
+        interrupt->Halt();
+    }
+    else if((which == IllegalInstrException)){
+        // IllegalInstrException, // Unimplemented or reserved instr.
+        printf("here is IllegalInstrException\n");
     }
     else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
