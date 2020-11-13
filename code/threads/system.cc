@@ -158,7 +158,7 @@ Initialize(int argc, char **argv)
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
     // 初始化bitmap,extern BitMap *bitmap;
-    bitmap = new BitMap(1024);
+    bitmap = new BitMap(NumPhysPages);
 #endif
 
 #ifdef FILESYS

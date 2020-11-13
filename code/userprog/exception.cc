@@ -58,28 +58,22 @@ void PageFaultHandler(){
 void UserProgClear(){
     // TranslationEntry *pageTable;
     // unsigned int pageTableSize;
-    int pageTableSize = machine->pageTableSize;
-    TranslationEntry *pageTable = machine->pageTable;
+    // int pageTableSize = machine->pageTableSize;
+    // TranslationEntry *pageTable = machine->pageTable;
     printf("start to clear bitmap,and clear the pageTable\n");
-    for(int i = 0;i < pageTableSize;i++){
-        // 清除位图标志
-        int pn = pageTable[i].physicalPage;
-        if(pn >= 0){
-            printf("clear the memory of bitmap is %d\n", pageTable[i].physicalPage);
-            bitmap->Clear(pageTable[i].physicalPage);
-            // 清除pageTable映射
-            pageTable[i].virtualPage = i;
-            pageTable[i].physicalPage = -1;
-            pageTable[i].valid = FALSE;
-            pageTable[i].use = FALSE;
-            pageTable[i].dirty = FALSE;
-            pageTable[i].readOnly = FALSE;
-            pageTable[i].createTime = 0;
-            pageTable[i].visitTime = 0;
-        }
-        // else pn == -1   这种情况说明该页面长时间没被访问，页框被其他页面占用了，该页面就不在内存了，所以无需清除
-
-        
+    for(int i = 0;i < NumPhysPages;i++){
+        // 清除当前进程的页表占用信息
+        if(machine->pageTable[i].valid && (machine->pageTable[i].pid == currentThread->getPid())){
+            printf("clear pid:%d pageTable:%d\n", currentThread->getPid(),i);
+            if((machine->pageTable[i].dirty)){
+                machine->ReWritePage(machine->pageTable[i].virtualPage,i);
+            }
+            machine->pageTable[i].virtualPage = -1;
+            machine->pageTable[i].valid = FALSE;
+            machine->pageTable[i].createTime = 0;
+            machine->pageTable[i].visitTime = 0;
+            machine->pageTable[i].dirty = FALSE;
+        }        
         
     }
     
@@ -88,12 +82,13 @@ void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
-    ExceptionType temp = NoException;
     // printf("which=%d type=%d\n", which,type);
     if ((which == SyscallException) && (type == SC_Halt)) {
     	DEBUG('a', "Shutdown, initiated by user program.\n");
+        printf("Suspended the thread pid=%d\n", currentThread->getPid());
         UserProgClear();
-       	interrupt->Halt();
+        currentThread->Suspended();
+
     } 
     // pageFadult去页表里查找
     // 页表里默认有所有滴的数据代码
@@ -102,7 +97,9 @@ ExceptionHandler(ExceptionType which)
     }
     else if((which == SyscallException) && (type == SC_Exit)){
         printf("this prog is going to exit\n");
+        printf("Suspended the thread pid=%d\n", currentThread->getPid());
         UserProgClear();
+        currentThread->Suspended();
     }
     else if((which ==  AddressErrorException) && (type == SC_Halt)){
         printf("AddressErrorException\n");

@@ -64,13 +64,26 @@ Machine::Machine(bool debug)
     for (i = 0; i < MemorySize; i++)
       	mainMemory[i] = 0;
 #ifdef USE_TLB
+      // 初始化快表
     tlb = new TranslationEntry[TLBSize];
     for (i = 0; i < TLBSize; i++){
         tlb[i].valid = FALSE;
         tlb[i].createTime = 0;
         tlb[i].visitTime = 0;
     }
-    pageTable = NULL;
+    // 初始化页表
+    pageTable = new TranslationEntry[NumPhysPages];
+    for(i = 0;i < NumPhysPages;i++){
+        pageTable[i].virtualPage = -1;
+        pageTable[i].physicalPage = i; //倒排索引的核心，以物理页框为基础建立页表
+        pageTable[i].pid = -1;
+        pageTable[i].valid = FALSE;
+        pageTable[i].readOnly = FALSE;
+        pageTable[i].use = FALSE;
+        pageTable[i].dirty = FALSE;
+        pageTable[i].createTime = 0;
+        pageTable[i].visitTime = 0;
+    }
 #else	// use linear page table
     tlb = NULL;
     pageTable = NULL;
@@ -114,6 +127,13 @@ Machine::RaiseException(ExceptionType which, int badVAddr)
     interrupt->setStatus(UserMode);
 }
 
+void Machine::ReWritePage(int vpn,int pa){
+    OpenFile *openfile = fileSystem->Open("virtual_memory");
+    if(openfile == NULL) ASSERT(FALSE);
+    openfile->WriteAt(&(machine->mainMemory[pa * PageSize]), PageSize,vpn * PageSize);
+    pageTable[pa].dirty = FALSE;
+    pageTable[pa].valid = FALSE;
+}
 //----------------------------------------------------------------------
 // Machine::Debugger
 // 	Primitive debugger for user programs.  Note that we can't use

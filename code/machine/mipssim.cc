@@ -35,7 +35,7 @@ Machine::Run()
     if(DebugIsEnabled('m'))
         printf("Starting thread \"%s\" at time %d\n",
 	       currentThread->getName(), stats->totalTicks);
-    interrupt->setStatus(UserMode);
+    		interrupt->setStatus(UserMode);
     for (;;) {
         OneInstruction(instr);
 		interrupt->OneTick();
@@ -99,6 +99,7 @@ Machine::OneInstruction(Instruction *instr)
 				// in the future
 
     // Fetch instruction 
+    // printf("pid=%d registers[PCReg]=%d\n", currentThread->getPid(),registers[PCReg]);
     if (!machine->ReadMem(registers[PCReg], 4, &raw))
 	return;			// exception occurred
 	
@@ -563,6 +564,7 @@ Machine::OneInstruction(Instruction *instr)
     DelayedLoad(nextLoadReg, nextLoadValue);
     
     // Advance program counters.
+
     registers[PrevPCReg] = registers[PCReg];	// for debugging, in case we
 						// are jumping into lala-land
     registers[PCReg] = registers[NextPCReg];

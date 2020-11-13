@@ -36,7 +36,8 @@ StartProcess(char *filename)
     delete executable;			// close file
 
     space->InitRegisters();		// set the initial register values
-    space->RestoreState();		// load page table register
+    // 使用全局的
+    // space->RestoreState();		// load page table register
 
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
@@ -45,11 +46,11 @@ StartProcess(char *filename)
 }
 
 void simpleTest(int which){
+    printf("now run thread,pid=%d\n", currentThread->getPid());
     machine->Run();         // jump to the user progam
 }
 void createSingleUserProcess(char *filename){
     // 1. 创建用户空间
-    printf("start to run filename=%s\n", filename);
     OpenFile *executable = fileSystem->Open(filename);
     if (executable == NULL) {
         printf("Unable to open file %s\n", filename);
@@ -60,26 +61,29 @@ void createSingleUserProcess(char *filename){
     
     //2. 创建用户进程 
     Thread *t1 = new Thread(filename);
+    printf("new thread:pid = %d\n", t1->getPid());
     t1->space = space;
     
     space->InitRegisters();     // set the initial register values
-    space->RestoreState();      // load page table register
+    // space->RestoreState();      // load page table register
 
     t1->Fork(simpleTest,0);
     
 }
 void MultiUserProcess(){
     char *filename1 = "../test/halt.noff";
-    char *filename2 = "../test/sort.noff";
+    char *filename2 = "../test/halt.noff";
+    // char *filename2 = "../test/sort.noff";
     createSingleUserProcess(filename1);
     createSingleUserProcess(filename2);
 
-    for(int i = 0;i < 2;i++){
-        printf("thread name:%s pid:%d uid:%d priority:%d\n", currentThread->getName(), 
-            currentThread->getPid(), currentThread->getUid(), currentThread->base_priority);
-            // 每运行一次当前线程，就让出CPU，让另一个线程继续执行
-            currentThread->Yield();
-    }
+     currentThread->Yield();
+    // for(int i = 0;i < 2;i++){
+    //     printf("current:thread name:%s pid:%d uid:%d priority:%d looptime:%d\n", currentThread->getName(), 
+    //         currentThread->getPid(), currentThread->getUid(), currentThread->base_priority,i);
+    //         // 每运行一次当前线程，就让出CPU，让另一个线程继续执行
+    //         currentThread->Suspended();
+    // }
 }
 // Data structures needed for the console test.  Threads making
 // I/O requests wait on a Semaphore to delay until the I/O completes.

@@ -59,7 +59,7 @@
 
 
 // Thread state
-enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
+enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED,SUSPENDED};
 
 // external function, dummy routine whose sole job is to call Thread::Print
 extern void ThreadPrint(int arg);	 
@@ -101,6 +101,8 @@ class Thread {
     
     void CheckOverflow();   			// Check if thread has 
 						// overflowed its stack
+    // 挂起一个线程
+    void Suspended(); 
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
     int getPid() { return pid;}

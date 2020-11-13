@@ -176,6 +176,7 @@ Thread::CheckOverflow()
 #endif
 }
 
+
 //----------------------------------------------------------------------
 // Thread::Finish
 // 	Called by ThreadRoot when a thread is done executing the 
@@ -244,7 +245,21 @@ Thread::Yield ()
     }
     (void) interrupt->SetLevel(oldLevel);
 }
-
+void Thread::Suspended(){
+    // 判断该进程的页框号是否需要回写
+    for(int i = 0;i < NumPhysPages;i++){
+        if(machine->pageTable[i].pid == currentThread->getPid()){
+            if(machine->pageTable[i].valid && machine->pageTable[i].dirty){
+                printf("in suspend:va=%d pa=%d pid=%d will be rewrite\n", machine->pageTable[i].virtualPage,i,machine->pageTable[i].pid);
+                machine->ReWritePage(machine->pageTable[i].virtualPage,i);
+            }
+        }
+    }
+    status = SUSPENDED;
+    int NextPC = machine->ReadRegister(NextPCReg);
+    machine->WriteRegister(PCReg,NextPC);
+    currentThread->Finish();
+}
 //----------------------------------------------------------------------
 // Thread::Sleep
 // 	Relinquish the CPU, because the current thread is blocked
