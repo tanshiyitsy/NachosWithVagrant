@@ -63,6 +63,7 @@ class Semaphore {
 // may release it.  As with semaphores, you can't read the lock value
 // (because the value might change immediately after you read it).  
 
+enum LockStatus { BUSY, FREE };
 class Lock {
   public:
     Lock(char* debugName);  		// initialize lock to be FREE
@@ -80,6 +81,10 @@ class Lock {
   private:
     char* name;				// for debugging
     // plus some other stuff you'll need to define
+    int status;
+    int pid;
+    Semaphore* mutex;
+    List *queue;
 };
 
 // The following class defines a "condition variable".  A condition
@@ -113,24 +118,24 @@ class Lock {
 // The consequence of using Mesa-style semantics is that some other thread
 // can acquire the lock, and change data structures, before the woken
 // thread gets a chance to run.
-
 class Condition {
   public:
-    Condition(char* debugName);		// initialize condition to 
-					// "no one waiting"
-    ~Condition();			// deallocate the condition
+    Condition(char* debugName);     // initialize condition to 
+                    // "no one waiting"
+    ~Condition();           // deallocate the condition
     char* getName() { return (name); }
     
-    void Wait(Lock *conditionLock); 	// these are the 3 operations on 
-					// condition variables; releasing the 
-					// lock and going to sleep are 
-					// *atomic* in Wait()
+    void Wait(Lock *conditionLock);     // these are the 3 operations on 
+                    // condition variables; releasing the 
+                    // lock and going to sleep are 
+                    // *atomic* in Wait()
     void Signal(Lock *conditionLock);   // conditionLock must be held by
     void Broadcast(Lock *conditionLock);// the currentThread for all of 
-					// these operations
+                    // these operations
 
   private:
     char* name;
+    List *queue;
     // plus some other stuff you'll need to define
 };
 #endif // SYNCH_H

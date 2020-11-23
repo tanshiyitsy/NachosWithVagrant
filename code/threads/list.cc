@@ -222,7 +222,6 @@ List::SortedRemove(int *keyPtr)
 
     if (IsEmpty()) 
 	return NULL;
-
     thing = first->item;
     if (first == last) {	// list had one item, now has none 
         first = NULL;

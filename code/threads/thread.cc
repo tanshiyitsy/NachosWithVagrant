@@ -242,6 +242,9 @@ Thread::Yield ()
     	scheduler->ReadyToRun(this);
     	scheduler->Run(nextThread);
     }
+    else{
+        printf("nextThread is NULL\n");
+    }
     (void) interrupt->SetLevel(oldLevel);
 }
 
@@ -270,6 +273,8 @@ Thread::Sleep ()
     Thread *nextThread;
     
     ASSERT(this == currentThread);
+    // 这里为什么要检查是关中断状态？
+    // 什么时候开这里的中断呢？因为已经切换到下一个线程了
     ASSERT(interrupt->getLevel() == IntOff);
     
     DEBUG('t', "Sleeping thread \"%s\"\n", getName());
