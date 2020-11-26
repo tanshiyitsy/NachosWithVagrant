@@ -205,6 +205,7 @@ void Condition::Broadcast(Lock* conditionLock) {
      Thread *thread;
      thread = (Thread *)queue->Remove();
      while(thread != NULL){
+        printf("thread:%s is wakeup in conditionLock\n", thread->getName());
         scheduler->ReadyToRun(thread);
         thread = (Thread *)queue->Remove();
      } 

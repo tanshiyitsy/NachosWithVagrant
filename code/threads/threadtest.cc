@@ -106,19 +106,21 @@ void ThreadTest2(){
 #include "synch.h"
 #include "unistd.h"
 int cnt = 0;
-int n = 3;
-int buffer[3];
+int n = 5;
+int buffer[5];
 void produce_item(){
+    cnt = 5;
     for(int i = 0;i < n;i++){
         if(buffer[i] == -1){
             // -1 表示为空
             // 9 表示内容
             buffer[i] = 9;
-            cnt++;
-            printf("%s produce an intem in %d\n", currentThread->getName(),i);
-            return;
+            // cnt++;
+            // printf("%s produce an intem in %d\n", currentThread->getName(),i);
+            // return;
         }
     }
+    printf("%s: fill all the buffer\n", currentThread->getName());
 }
 void consumer_item(){
     for(int i = 0;i < n;i++){
@@ -131,50 +133,52 @@ void consumer_item(){
     }
 }
 // 条件变量和锁实现,生产者和消费者用两个条件变量
-// Lock *mutex = new Lock("mutex");
-// Condition *pro_con = new Condition("pro_con");
-// Condition *cons_con = new Condition("cons_con");
-// void Producer(int which){
-//     while(true){
-//         mutex->Acquire();
-//         // printf("thread:%s Acquire the mutex\n", currentThread->getName());
-//         if(cnt == n){
-//             // 缓冲区满了，用条件变量阻塞当前进程
-//             printf("buffer is full\n");
-//             pro_con->Wait(mutex);
-//         }
-//         // 满足条件
-//         produce_item();
-//         sleep(1);
-//         if(cnt == 1){
-//             // 唤醒消费者
-//             // printf("buffer have new item\n");
-//             cons_con->Signal(mutex);
-//         }
-//         // printf("(thread:%s Release Lock)\n", currentThread->getName());
-//         mutex->Release();
-//     }
-// }
-// void Consumer(int which){
-//     while(true){
-//         mutex->Acquire();
-//         // printf("thread:%s Acquire the mutex\n", currentThread->getName());
-//         if(cnt == 0){
-//             // 缓冲区为空，阻塞
-//             printf("buffer is empty\n");
-//             cons_con->Wait(mutex);
-//         }
-//         consumer_item();
-//         sleep(1);
-//         if(cnt == n-1){
-//             // 唤醒生产者
-//             // printf("buffer have new empty\n");
-//             pro_con->Signal(mutex);
-//         }
-//         // printf("(thread:%s Release Lock)\n", currentThread->getName());
-//         mutex->Release();
-//     }
-// }
+Lock *mutex = new Lock("mutex");
+Condition *pro_con = new Condition("pro_con");
+Condition *cons_con = new Condition("cons_con");
+void Producer(int which){
+    while(true){
+        mutex->Acquire();
+        // printf("thread:%s Acquire the mutex\n", currentThread->getName());
+        if(cnt == n){
+            // 缓冲区满了，用条件变量阻塞当前进程
+            printf("buffer is full\n");
+            pro_con->Wait(mutex);
+        }
+        // 满足条件
+        produce_item();
+        sleep(1);
+        // 唤醒所有消费者
+        cons_con->Broadcast(mutex);
+        // if(cnt == 1){
+        //     // 唤醒一个消费者
+        //     printf("buffer have new item\n");
+        //     cons_con->Signal(mutex);
+        // }
+        // printf("(thread:%s Release Lock)\n", currentThread->getName());
+        mutex->Release();
+    }
+}
+void Consumer(int which){
+    while(true){
+        mutex->Acquire();
+        // printf("thread:%s Acquire the mutex\n", currentThread->getName());
+        if(cnt == 0){
+            // 缓冲区为空，阻塞
+            printf("buffer is empty\n");
+            cons_con->Wait(mutex);
+        }
+        consumer_item();
+        sleep(1);
+        if(cnt == n-1){
+            // 唤醒生产者
+            // printf("buffer have new empty\n");
+            pro_con->Signal(mutex);
+        }
+        // printf("(thread:%s Release Lock)\n", currentThread->getName());
+        mutex->Release();
+    }
+}
 
 
 // 用信号量和锁实现
@@ -279,6 +283,20 @@ void Lab3RWLockTest(){
     // reader4->Fork(Read,1);
 
 }
+void Lab3Chan1Test(){
+    // 创建一个生产者
+    Thread *producer1 = new Thread("producer1");
+    producer1->Fork(Producer,1);
+
+    // 创建三个消费者
+    Thread *consumer1 = new Thread("consumer1");
+    consumer1->Fork(Consumer,1);
+    Thread *consumer2 = new Thread("consumer2");
+    consumer2->Fork(Consumer,1);
+    Thread *consumer3 = new Thread("consumer3");
+    consumer3->Fork(Consumer,1);
+    currentThread->Yield();
+}
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -296,7 +314,8 @@ ThreadTest()
             break;
         case 3:
             // ThreadTestLab3();
-            Lab3RWLockTest();
+            // Lab3RWLockTest();
+        Lab3Chan1Test();
             break;
         default:
         	printf("No test specified.\n");
