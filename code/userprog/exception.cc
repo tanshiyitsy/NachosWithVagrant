@@ -53,9 +53,11 @@
 void
 ExceptionHandler(ExceptionType which)
 {
+	// 如果是系统调用类型，在这里取出系统调用的类别码
     int type = machine->ReadRegister(2);
 
     if ((which == SyscallException) && (type == SC_Halt)) {
+    	// 这里表示是系统调用 && 系统调用是SC_HALT
 	DEBUG('a', "Shutdown, initiated by user program.\n");
    	interrupt->Halt();
     } else {

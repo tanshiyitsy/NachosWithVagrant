@@ -4,6 +4,7 @@
  *	Since we don't want to pull in the entire C library, we define
  *	what we need for a user program here, namely Start and the system
  *	calls.
+
  */
 
 #define IN_ASM
@@ -45,7 +46,8 @@ __start:
 	.globl Halt
 	.ent	Halt
 Halt:
-	addiu $2,$0,SC_Halt
+	# 这句话作用是在r2寄存器中存放系统调用的类别码为SC_HALT;
+	addiu $2,$0,SC_Halt   
 	syscall
 	j	$31
 	.end Halt
