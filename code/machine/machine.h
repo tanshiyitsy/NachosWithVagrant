@@ -145,7 +145,8 @@ class Machine {
 				// Trap to the Nachos kernel, because of a
 				// system call or other exception.  
     void Debugger();		// invoke the user program debugger
-    void DumpState();		// print the user CPU and memory state 
+    void DumpState();		// print the user CPU and memory state
+    void PCAdvanced();
 
 
 // Data structures -- all of these are accessible to Nachos kernel code.

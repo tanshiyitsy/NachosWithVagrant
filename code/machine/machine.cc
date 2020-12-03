@@ -204,15 +204,22 @@ Machine::DumpState()
 //----------------------------------------------------------------------
 
 int Machine::ReadRegister(int num)
-    {
-	ASSERT((num >= 0) && (num < NumTotalRegs));
-	return registers[num];
-    }
+{
+    ASSERT((num >= 0) && (num < NumTotalRegs));
+    return registers[num];
+}
 
 void Machine::WriteRegister(int num, int value)
-    {
-	ASSERT((num >= 0) && (num < NumTotalRegs));
-	// DEBUG('m', "WriteRegister %d, value %d\n", num, value);
-	registers[num] = value;
-    }
-
+{
+    ASSERT((num >= 0) && (num < NumTotalRegs));
+    // DEBUG('m', "WriteRegister %d, value %d\n", num, value);
+    registers[num] = value;
+}
+void Machine::PCAdvanced(){
+    // registers[PrevPCReg] = registers[PCReg]; 
+    // registers[PCReg] = registers[NextPCReg];
+    // registers[NextPCReg] = pcAfter;
+    WriteRegister(PrevPCReg,registers[PCReg]);
+    WriteRegister(PCReg,registers[NextPCReg]);
+    WriteRegister(NextPCReg,registers[NextPCReg] + sizeof(int));
+}

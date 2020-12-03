@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort
+all: halt shell matmult sort tansylab5
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -65,3 +65,8 @@ matmult.o: matmult.c
 matmult: matmult.o start.o
 	$(LD) $(LDFLAGS) start.o matmult.o -o matmult.coff
 	../bin/coff2noff matmult.coff matmult
+tansylab5.o: tansylab5.c
+	$(CC) $(CFLAGS) -c tansylab5.c
+tansylab5: tansylab5.o start.o
+	$(LD) $(LDFLAGS) start.o tansylab5.o -o tansylab5.coff
+	../bin/coff2noff tansylab5.coff tansylab5

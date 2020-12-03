@@ -24,6 +24,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+#include "filesys.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -89,11 +90,51 @@ ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
     ExceptionType temp = NoException;
-    // printf("which=%d type=%d\n", which,type);
-    if ((which == SyscallException) && (type == SC_Halt)) {
-    	DEBUG('a', "Shutdown, initiated by user program.\n");
-        UserProgClear();
-       	interrupt->Halt();
+    printf("which=%d type=%d\n", which,type);
+ 	// #define SC_Halt		0
+	// #define SC_Exit		1
+	// #define SC_Exec		2
+	// #define SC_Join		3
+	// #define SC_Create	4
+	// #define SC_Open		5
+	// #define SC_Read		6
+	// #define SC_Write	7
+	// #define SC_Close	8
+	// #define SC_Fork		9
+	// #define SC_Yield	10
+    if (which == SyscallException) {
+    	if(type == SC_Halt){
+    		DEBUG('a', "Shutdown, initiated by user program.\n");
+	        UserProgClear();
+	       	interrupt->Halt();
+    	}
+    	else if(type == SC_Create){
+    		int addr = machine->ReadRegister(4);
+            printf("addr is %d\n", addr);
+    		char fileName[20];
+    		int value = 0,cnt = 0;
+    		do{
+    			machine->ReadMem(addr+cnt,1,&value);
+    			fileName[cnt++] = value;
+                printf("cnt=%d value=%d\n", cnt-1,fileName[cnt-1]);
+    		}while(value != 0);
+            // fileName[cnt] = '\0';
+    		printf("the file will be create is %s\n", fileName);
+    		// fileSystem->Create(fileName,128);
+            machine->PCAdvanced();
+    	}
+    	else if(type == SC_Open){
+
+    	}
+    	else if(type == SC_Close){
+
+    	}
+    	else if(type == SC_Write){
+
+    	}
+    	else if(type == SC_Read){
+
+    	}
     } 
     // pageFadult去页表里查找
     // 页表里默认有所有滴的数据代码
@@ -114,7 +155,7 @@ ExceptionHandler(ExceptionType which)
         printf("here is IllegalInstrException\n");
     }
     else {
-	printf("Unexpected user mode exception %d %d\n", which, type);
-	ASSERT(FALSE);
+		printf("Unexpected user mode exception %d %d\n", which, type);
+		ASSERT(FALSE);
     }
 }
