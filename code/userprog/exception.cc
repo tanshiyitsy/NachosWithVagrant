@@ -79,9 +79,6 @@ void UserProgClear(){
             pageTable[i].visitTime = 0;
         }
         // else pn == -1   这种情况说明该页面长时间没被访问，页框被其他页面占用了，该页面就不在内存了，所以无需清除
-
-        
-        
     }
     
 }
@@ -90,16 +87,9 @@ ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
     ExceptionType temp = NoException;
-    printf("which=%d type=%d\n", which,type);
- 	// #define SC_Halt		0
-	// #define SC_Exit		1
+    // printf("which=%d type=%d\n", which,type);
 	// #define SC_Exec		2
 	// #define SC_Join		3
-	// #define SC_Create	4
-	// #define SC_Open		5
-	// #define SC_Read		6
-	// #define SC_Write	7
-	// #define SC_Close	8
 	// #define SC_Fork		9
 	// #define SC_Yield	10
     if (which == SyscallException) {
@@ -109,31 +99,96 @@ ExceptionHandler(ExceptionType which)
 	       	interrupt->Halt();
     	}
     	else if(type == SC_Create){
+            printf("------------------now in SC_Create--------------\n");
     		int addr = machine->ReadRegister(4);
-            printf("addr is %d\n", addr);
     		char fileName[20];
     		int value = 0,cnt = 0;
     		do{
-    			machine->ReadMem(addr+cnt,1,&value);
+    			if(!machine->ReadMem(addr+cnt,1,&value)){
+                    value = 7;
+                    continue;
+                }
     			fileName[cnt++] = value;
-                printf("cnt=%d value=%d\n", cnt-1,fileName[cnt-1]);
     		}while(value != 0);
-            // fileName[cnt] = '\0';
-    		printf("the file will be create is %s\n", fileName);
-    		// fileSystem->Create(fileName,128);
+    		if(fileSystem->Create(fileName,128)){
+                printf("successfully to create file:%s\n", fileName);
+                // WriteRegister(int num, int value)
+                machine->WriteRegister(2,0);
+            }
+            else{
+                printf("fail to create file:%s\n", fileName);
+                machine->WriteRegister(2,-1);
+            }
             machine->PCAdvanced();
     	}
     	else if(type == SC_Open){
-
+            printf("------------------now in SC_Open--------------\n");
+            int addr = machine->ReadRegister(4);
+            char fileName[20];
+            int value = 0,cnt = 0;
+            do{
+                if(!machine->ReadMem(addr+cnt,1,&value)){
+                    value = 7;
+                    continue;
+                }
+                fileName[cnt++] = value;
+            }while(value != 0);
+            OpenFile* openfile = fileSystem->Open(fileName);
+            machine->WriteRegister(2,int(openfile));
+            machine->PCAdvanced();
     	}
     	else if(type == SC_Close){
-
+            printf("------------------now in SC_Close--------------\n");
+            // 关闭打开的文件指针
+            OpenFile* openfile = (OpenFile*)machine->ReadRegister(4);
+            delete openfile;
+            machine->PCAdvanced();
     	}
     	else if(type == SC_Write){
-
+            printf("------------------now in SC_Write--------------\n");
+            // void Write(char *buffer, int size, OpenFileId id);
+            // 把buffer里的内容写入file 
+            int addr = machine->ReadRegister(4);
+            int size = machine->ReadRegister(5);
+            OpenFile* openfile = (OpenFile*)machine->ReadRegister(6);
+            char buffer[size+1];
+            int data;
+            int i = 0;
+            while(i < size){
+                if(machine->ReadMem(addr + i,1,&data)){
+                    buffer[i] = data;
+                    i++;
+                }
+            }
+            buffer[size] = '\0';
+            printf("the buffer is:%s\n", buffer);
+            if((int)openfile == ConsoleOutput){
+                printf("%s\n", buffer);
+            }
+            else
+                openfile->Write(buffer,size);
+            machine->PCAdvanced();
     	}
     	else if(type == SC_Read){
-
+            printf("------------------now in SC_Read--------------\n");
+            // int Read(char *buffer, int size, OpenFileId id);
+            // 把file里的内容读入buffer
+            int addr = machine->ReadRegister(4);
+            int size = machine->ReadRegister(5);
+            OpenFile* openfile = (OpenFile*)machine->ReadRegister(6);
+            char temp[size+1]; //暂时用于存放读取的数据
+            int ans = openfile->Read(temp,size);
+            // 写入buffer所在内存
+            int i = 0;
+            while(i < size){
+                if(machine->WriteMem(addr + i,1,(int)temp[i])){
+                    i++;
+                }
+            }
+            printf("temp is:%s,this is read from file\n", temp);
+            printf("ans is %d\n", ans);
+            machine->WriteRegister(2,ans);
+            machine->PCAdvanced();
     	}
     } 
     // pageFadult去页表里查找

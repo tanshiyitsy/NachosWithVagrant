@@ -15,7 +15,25 @@
 int
 main()
 {
-	Create("test_lab5");
+	// 1. 创建文件
+	char *name = "test_lab5";
+	if(Create(name) != -1){
+		// 2. 打开文件
+		int fd = Open(name);
+		if(fd != -1){
+			// 3. 写入数据
+			char buffer[30];
+			int cnt = 33;
+			Write("hello this is lab5 about syscall",cnt,fd);
+			Close(fd);
+			fd = Open(name);
+			cnt = Read(buffer,cnt,fd);
+			Close(fd);
+			fd = Open(name);
+			Write(buffer,cnt,ConsoleOutput);
+			Close(fd);
+		}
+	}
     Halt();
     /* not reached */
 }

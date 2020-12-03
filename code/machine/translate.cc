@@ -96,8 +96,8 @@ Machine::ReadMem(int addr, int size, int *value)
     exception = Translate(addr, &physicalAddress, size, FALSE);
     // printf("VA=%d PA=%d\n", addr, physicalAddress);
     if (exception != NoException) {
-	machine->RaiseException(exception, addr);
-	return FALSE;
+	   machine->RaiseException(exception, addr);
+	   return FALSE;
     }
     switch (size) {
       case 1:
@@ -197,8 +197,8 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 
 // check for alignment errors
     if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
-	DEBUG('a', "alignment problem at %d, size %d!\n", virtAddr, size);
-	return AddressErrorException;
+    	DEBUG('a', "alignment problem at %d, size %d!\n", virtAddr, size);
+    	return AddressErrorException;
     }
     
     // we must have either a TLB or a page table, but not both!
@@ -210,7 +210,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 // from the virtual address
     vpn = (unsigned) virtAddr / PageSize;
     offset = (unsigned) virtAddr % PageSize;
-    
+    // printf("virtAddr = %d vpn = %d offset = %d\n", virtAddr,vpn,offset);
     for (entry = NULL, i = 0; i < TLBSize; i++){
     	if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
 			entry = &tlb[i];			// FOUND!
@@ -237,13 +237,13 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 	DEBUG('a', "*** frame %d > %d!\n", pageFrame, NumPhysPages);
 	return BusErrorException;
     }
-
     entry->use = TRUE;		// set the use, dirty bits
     if (writing)
-	entry->dirty = TRUE;
+	   entry->dirty = TRUE;
 	entry->visitTime = stats->totalTicks;
 	// printf("find the page in tlb,renew the visitTime = %d\n",entry->visitTime);
     *physAddr = pageFrame * PageSize + offset;
+    // printf("pageFrame = %d offset=%d vpn = %d\n", pageFrame,offset,vpn);
     ASSERT((*physAddr >= 0) && ((*physAddr + size) <= MemorySize));
     DEBUG('a', "phys addr = 0x%x\n", *physAddr);
     return NoException;
@@ -310,7 +310,7 @@ ExceptionType Machine::FIFOSwap(int virtAddr){
 
 
 ExceptionType Machine::LRUSwap(int virtAddr){
-	printf("now started PageFaultException handler\n");
+	// printf("now started PageFaultException handler\n");
 	ASSERT(pageTable != NULL);
 	int i;
     unsigned int vpn, offset;
@@ -331,7 +331,7 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 	    // 不在页表里，去内存里拿
 		// 1. 分配物理页框
 		// 这里还要考虑分配失败的情况，如果失败的话要置换页面
-		printf("not hint the pageTable\n");
+		// printf("not hint the pageTable\n");
 		int pn = bitmap->Find();
 		if(pn == -1){
 			// 分配失败
@@ -342,13 +342,13 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 					index = i;
 				}
 			}
-			printf("index = %d pageTable[index].physicalPage=%d\n", index,pageTable[index].physicalPage);
+			// printf("index = %d pageTable[index].physicalPage=%d\n", index,pageTable[index].physicalPage);
 			pageTable[index].valid = FALSE;
 			pn = pageTable[index].physicalPage;
 			pageTable[index].physicalPage = -1;
 		}
 	
-		printf("successfully to allocate the bitmap,the pn is %d,va is %d\n",pn,vpn);
+		// printf("successfully to allocate the bitmap,the pn is %d,va is %d\n",pn,vpn);
 		// 2. 读取一页的内容进来
 		OpenFile *openfile = fileSystem->Open("virtual_memory");
 		openfile->ReadAt(&(machine->mainMemory[pn * PageSize]),PageSize,vpn * PageSize);
@@ -358,7 +358,7 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 		
 	}
 	else{
-		printf("hint the pageTable\n");
+		// printf("hint the pageTable\n");
 	}
 	
 	// 原来是直接使用，假设已经存在；现在要判断一下
@@ -388,8 +388,8 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 	// 2.3 更新来到时间
 	entry->visitTime = stats->totalTicks;
 	tlb[index] = *entry;
-	printf("index %d page will be coverd,new virtualPage=%d physicalPage=%d visitTime=%d\n", 
-		index,tlb[index].virtualPage,tlb[index].physicalPage,tlb[index].visitTime);
+	// printf("index %d page will be coverd,new virtualPage=%d physicalPage=%d visitTime=%d\n", 
+		// index,tlb[index].virtualPage,tlb[index].physicalPage,tlb[index].visitTime);
 	
 	return NoException;
 }

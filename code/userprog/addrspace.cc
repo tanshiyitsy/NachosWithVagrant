@@ -120,21 +120,27 @@ AddrSpace::AddrSpace(OpenFile *executable)
     if(noffH.code.size > 0){
         int pos1 = noffH.code.inFileAddr;
         int pos2 = noffH.code.virtualAddr;
+        // printf("init pos1 = %d pos2=%d\n", pos1,pos2);
+        // init pos1 = 40 pos2=0
         // 不能直接从noffH读物到openfile，一个字节一个字节读
         // 让openfile中的数据的vpn同excutable一致
         char temp_char;
         for(int j = 0;j < noffH.code.size;j++,pos1++,pos2++){
             executable->ReadAt(&(temp_char),1,pos1);
             openfile->WriteAt(&(temp_char),1,pos2);
+            // printf("pos2 = %d temp_char=%c\n", pos2,temp_char);
         }
     }
     if(noffH.initData.size > 0){
         int pos1 = noffH.initData.inFileAddr;
         int pos2 = noffH.initData.virtualAddr;
         char temp_char;
+        // printf("init pos1 = %d pos2=%d\n", pos1,pos2);
+        // init pos1 = 312 pos2=272
         for(int j = 0;j < noffH.initData.size;j++,pos1++,pos2++){
             executable->ReadAt(&(temp_char),1,pos1);
             openfile->WriteAt(&(temp_char),1,pos2);
+            // printf("pos2 = %d temp_char=%c\n", pos2,temp_char);
         }
     }
     /*
