@@ -176,7 +176,10 @@ AddrSpace::AddrSpace(OpenFile *executable)
     }*/
     
 }
-
+AddrSpace::AddrSpace(OpenFile *executable,char *filename){
+    AddrSpace(executable);
+    fileName = filename;
+}
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
 // 	Dealloate an address space.  Nothing for now!
@@ -244,4 +247,21 @@ void AddrSpace::RestoreState()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+}
+// 复制
+void AddrSpace::copySpace(AddrSpace* parent_space){
+    // 1. 页表
+    pageTable = new TranslationEntry[numPages];
+    TranslationEntry *parent_pageTable = parent_space->pageTable;
+    for (i = 0; i < numPages; i++) {
+        pageTable[i].virtualPage = parent_pageTable[i].virtualPage; 
+        pageTable[i].physicalPage = parent_pageTable[i].physicalPage;
+        pageTable[i].valid = parent_pageTable[i].valid;
+        pageTable[i].use = parent_pageTable[i].use;
+        pageTable[i].dirty = parent_pageTable[i].dirty;
+        pageTable[i].readOnly = parent_pageTable[i].readOnly; 
+        pageTable[i].createTime = parent_pageTable[i].createTime;
+        pageTable[i].visitTime = parent_pageTable[i].visitTime;
+    }
+    fileName = parent_space->fileName;
 }

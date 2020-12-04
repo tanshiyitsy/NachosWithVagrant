@@ -25,6 +25,7 @@
 #include "system.h"
 #include "syscall.h"
 #include "filesys.h"
+#include "thread.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -82,16 +83,20 @@ void UserProgClear(){
     }
     
 }
+void exec_func(int which){
+
+}
+void fork_func(int func_addr){
+    machine->WriteRegister(PCReg,func_addr);
+    machine->WriteRegister(NextPCReg,func_addr+4);
+    machine->Run();
+}
 void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
     ExceptionType temp = NoException;
-    // printf("which=%d type=%d\n", which,type);
-	// #define SC_Exec		2
-	// #define SC_Join		3
-	// #define SC_Fork		9
-	// #define SC_Yield	10
+    printf("which=%d type=%d\n", which,type);
     if (which == SyscallException) {
     	if(type == SC_Halt){
     		DEBUG('a', "Shutdown, initiated by user program.\n");
@@ -190,6 +195,99 @@ ExceptionHandler(ExceptionType which)
             machine->WriteRegister(2,ans);
             machine->PCAdvanced();
     	}
+        else if(type == SC_Exec){
+            // SpaceId Exec(char *name);
+            // 加载并执行name的nachos的可执行文件，返回地址空间标识符
+            printf("------------------now in SC_Exec--------------\n");
+            int addr = machine->ReadRegister(4);
+            char threadName[20];
+            int i = 0,value = 0;
+            do{
+                if(!machine->ReadMem(addr + i),1,&value){
+                    value = 9;
+                    continue;
+                }
+                threadName[i++] = value;
+            }while(value != 0);
+            
+            OpenFile *executable = fileSystem->Open(fileName);
+            if(executable == NULL){
+                printf("Unable to open file %s\n", fileName);
+                return;
+            }
+            AddrSpace* space = new AddrSpace(executable,fileName);
+            delete executable;
+            currentThread->space = space;
+            space->InitRegisters();
+            space->RestoreState();
+            // 需要重新fork吗？
+            // t-Fork(exec_func,0);
+            machine->Run();
+            machine->WriteRegister(2,currentThread->getPid());
+            machine->PCAdvanced();
+        }
+        else if(type == SC_Fork){
+            // Address 新增属性fileName
+            // 需要逐页复制页表的内容
+            // 建立线程，执行fork_func
+            // void Fork(void (*func)());
+            // 参数为函数指针，其实是用户程序地址空间中函数的虚拟地址
+            // 用户级别的线程可以运行多个进程运行在一个用户空间内
+            // 运行相同的 用户程序，不同的是，fork是从执行位置开始运行的，
+            // 因此必须初始化PC为给定的函数指针
+            printf("------------------now in SC_Fork--------------\n");
+            int func_addr = machine->ReadRegister(4); // 函数指针的位置
+            // 复制父进程的地址空间
+            OpenFile *executable = fileSystem->Open(currentThread->space->fileName);
+            if(executable == NULL){
+                printf("Unable to open file %s\n", fileName);
+                return;
+            }
+            // 这里的地址空间是打开同一个可执行文件，还是
+            // 子进程的PC指针是和父进程一样？还是为0？
+            AddrSpace *child_space = new AddrSpace(executable);
+            // 复制space
+            child_space->copySpace(currentThread->space);
+            delete executable;
+            Thread *child = new Thread("child!");
+            child->space = child_space;
+            child->Fork(fork_func,func_addr);
+            // 判断是否需要抢占
+            machine->WriteRegister(2,child->getPid());
+            machine->PCAdvanced();
+        }
+        else if(type == SC_Yield){
+            printf("------------------now in SC_Yield--------------\n");
+            machine->PCAdvanced();
+            currentThread->Yield();
+        }
+        else if(type == SC_Join){
+            // 等待标识符为id的用户线程运行完毕，返回其退出状态
+            // 1. 获取线程id
+            // 2. 检查线程池，确定特定线程是否处于活跃状态，如果活跃，那么切换
+            printf("------------------now in SC_Join--------------\n");
+            int thread_id = machine->ReadRegister(4);
+            while(pid_pool[thread_id] == 1){
+                currentThread->Yield();
+            }
+            machine->PCAdvanced();
+        }
+        else if(type == SC_Exit){
+            /* This user program is done (status = 0 means exited normally). */
+            // void Exit(int status);  
+            // 用户程序退出，status = 0 表示正常
+            // 1. 获取退出状态，输出相关信息
+            // 2. 释放页表空间
+            // 3. 更新PC
+            // 4. 结束当前线程
+            printf("------------------now in SC_Exit--------------\n");
+            int status = machine->ReadRegister(4);
+            printf("thread:%s exit with status:%d\n", currentThread->getName(),status);
+            // 这里释放的应该只是当前进程的页表
+            UserProgClear();
+            machine->PCAdvanced();
+            currentThread->Finish();
+        }
     } 
     // pageFadult去页表里查找
     // 页表里默认有所有滴的数据代码
