@@ -262,7 +262,7 @@ ExceptionHandler(ExceptionType which)
             space->RestoreState();
             currentThread->space = space;
             printf("renew the space....\n");
-            // 需要重新fork吗？
+            // 需要重新fork吗？不需要
             // t-Fork(exec_func,0);
             printf("rerun....\n");
             machine->Run();
@@ -270,7 +270,7 @@ ExceptionHandler(ExceptionType which)
             machine->PCAdvanced();
         }
         else if(type == SC_Fork){
-            // Address 新增属性fileName,thread新增属性parent和child
+            // Address 新增属性fileName
             // 需要逐页复制页表的内容,PTE新增pid属性，深拷贝的时候注意为当前进程 的pid
             // 建立线程，执行fork_func
             // void Fork(void (*func)());
@@ -279,11 +279,18 @@ ExceptionHandler(ExceptionType which)
             // 运行相同的 用户程序，不同的是，fork是从执行位置开始运行的，
             // 因此必须初始化PC为给定的函数指针
             printf("------------------now in SC_Fork--------------\n");
-            // machine->PCAdvanced();
             int func_addr = machine->ReadRegister(4); // 函数指针的位置
             
             Thread *child = new Thread("child!");
             OpenFile *executable = fileSystem->Open(currentThread->space->fileName);
+            if(executable == NULL){
+                printf("Unable to open file %s\n", fileName);
+                interrupt->Halt();
+                return;
+            }
+            else{
+                printf("successfully open the file\n");
+            }
             // 这里的地址空间是打开同一个可执行文件
             // printf("new child_space...\n");
             AddrSpace *child_space = new AddrSpace(executable); delete executable;
