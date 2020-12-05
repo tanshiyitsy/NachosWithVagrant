@@ -56,6 +56,7 @@
 #define StackSize	(4 * 1024)	// in words
 #define PID_MAX 128 // 系统最大线程
 
+// int pid_pool[PID_MAX];
 
 
 // Thread state

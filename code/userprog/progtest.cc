@@ -25,12 +25,12 @@ StartProcess(char *filename)
 {
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
-    space->fileName = filename;
     if (executable == NULL) {
     	printf("Unable to open file %s\n", filename);
     	return;
     }
-    space = new AddrSpace(executable);    
+    printf("now in StartProcess.....\n");
+    space = new AddrSpace(executable,filename);    
     currentThread->space = space;
 
     delete executable;			// close file
@@ -70,7 +70,7 @@ void createSingleUserProcess(char *filename){
 }
 void MultiUserProcess(){
     char *filename1 = "../test/halt.noff";
-    char *filename2 = "../test/sort.noff";
+    char *filename2 = "../test/halt.noff";
     createSingleUserProcess(filename1);
     createSingleUserProcess(filename2);
 

@@ -17,6 +17,8 @@ Scheduler *scheduler;			// the ready list
 Interrupt *interrupt;			// interrupt status
 Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
+Thread *thread_pool[PID_MAX];
+int pid_pool[PID_MAX];
 					// for invoking context switches
 
 #ifdef FILESYS_NEEDED

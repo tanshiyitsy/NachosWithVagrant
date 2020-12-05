@@ -50,10 +50,10 @@ main()
 	// }
 	// 1. fork
 	int fid = Fork(func);
-	int eid = Exec("halt");
-	Yield();
-	Join(id);
-	Join(eid);
+	// int eid = Exec("../test/halt");
+	// Yield();
+	// Join(fid);
+	// Join(eid);
 
 	Exit(0);
     // Halt();

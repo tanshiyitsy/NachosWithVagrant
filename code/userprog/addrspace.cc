@@ -177,7 +177,65 @@ AddrSpace::AddrSpace(OpenFile *executable)
     
 }
 AddrSpace::AddrSpace(OpenFile *executable,char *filename){
-    AddrSpace(executable);
+    NoffHeader noffH;
+    unsigned int i, size;
+
+    executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
+
+    if ((noffH.noffMagic != NOFFMAGIC) && 
+        (WordToHost(noffH.noffMagic) == NOFFMAGIC))
+    {
+        printf("now in the loop\n");
+        SwapHeader(&noffH);
+    }
+    ASSERT(noffH.noffMagic == NOFFMAGIC);
+
+    // how big is address space?
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
+            + UserStackSize;    // we need to increase the size
+                        // to leave room for the stack
+    numPages = divRoundUp(size, PageSize);
+    
+    printf("size=%d numPages=%d\n", size,numPages);
+    size = numPages * PageSize;
+
+    ASSERT(numPages <= NumPhysPages); 
+    pageTable = new TranslationEntry[numPages];
+    for (i = 0; i < numPages; i++) {
+        pageTable[i].virtualPage = i;   // for now, virtual page # = phys page #
+        pageTable[i].physicalPage = -1;
+        pageTable[i].valid = FALSE;
+        pageTable[i].use = FALSE;
+        pageTable[i].dirty = FALSE;
+        pageTable[i].readOnly = FALSE;
+        pageTable[i].createTime = 0;
+        pageTable[i].visitTime = 0;
+    }
+    // bzero(machine->mainMemory, size);
+
+    fileSystem->Create("virtual_memory",size);
+    OpenFile *openfile = fileSystem->Open("virtual_memory");
+    if(openfile == NULL) ASSERT(false);
+    if(noffH.code.size > 0){
+        int pos1 = noffH.code.inFileAddr;
+        int pos2 = noffH.code.virtualAddr;
+        char temp_char;
+        for(int j = 0;j < noffH.code.size;j++,pos1++,pos2++){
+            executable->ReadAt(&(temp_char),1,pos1);
+            openfile->WriteAt(&(temp_char),1,pos2);
+            // printf("pos1 = %d pos2 = %d temp_char=%c\n", pos1, pos2,temp_char);
+        }
+    }
+    if(noffH.initData.size > 0){
+        int pos1 = noffH.initData.inFileAddr;
+        int pos2 = noffH.initData.virtualAddr;
+        char temp_char;
+        for(int j = 0;j < noffH.initData.size;j++,pos1++,pos2++){
+            executable->ReadAt(&(temp_char),1,pos1);
+            openfile->WriteAt(&(temp_char),1,pos2);
+            // printf("pos1 = %d, pos2 = %d temp_char=%c\n", pos2,temp_char);
+        }
+    }
     fileName = filename;
 }
 //----------------------------------------------------------------------
@@ -253,7 +311,7 @@ void AddrSpace::copySpace(AddrSpace* parent_space){
     // 1. 页表
     pageTable = new TranslationEntry[numPages];
     TranslationEntry *parent_pageTable = parent_space->pageTable;
-    for (i = 0; i < numPages; i++) {
+    for (int i = 0; i < numPages; i++) {
         pageTable[i].virtualPage = parent_pageTable[i].virtualPage; 
         pageTable[i].physicalPage = parent_pageTable[i].physicalPage;
         pageTable[i].valid = parent_pageTable[i].valid;

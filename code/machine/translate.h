@@ -27,38 +27,38 @@
 // In addition, there are some extra bits for access control (valid and 
 // read-only) and some bits for usage information (use and dirty).
 
-class TranslationEntry {
-  public:
-    int virtualPage;  	// The page number in virtual memory.
-    int physicalPage;  	// The page number in real memory (relative to the
-			//  start of "mainMemory"
-    bool valid;         // If this bit is set, the translation is ignored.
-			// (In other words, the entry hasn't been initialized.)
-    bool readOnly;	// If this bit is set, the user program is not allowed
-			// to modify the contents of the page.
-    bool use;           // This bit is set by the hardware every time the
-			// page is referenced or modified.
-    bool dirty;         // This bit is set by the hardware every time the
-			// page is modified.
-    int createTime; // 用于FIFO的置换算法，记录谁先来的
-    int visitTime; // 用于LRU置换算法，记录最近一次访问时间
-};
 // class TranslationEntry {
 //   public:
-//     int virtualPage;    // The page number in virtual memory.
-//     int physicalPage;   // The page number in real memory (relative to the
-//             //  start of "mainMemory"
-//     int pid;
+//     int virtualPage;  	// The page number in virtual memory.
+//     int physicalPage;  	// The page number in real memory (relative to the
+// 			//  start of "mainMemory"
 //     bool valid;         // If this bit is set, the translation is ignored.
-//             // (In other words, the entry hasn't been initialized.)
-//     bool readOnly;  // If this bit is set, the user program is not allowed
-//             // to modify the contents of the page.
+// 			// (In other words, the entry hasn't been initialized.)
+//     bool readOnly;	// If this bit is set, the user program is not allowed
+// 			// to modify the contents of the page.
 //     bool use;           // This bit is set by the hardware every time the
-//             // page is referenced or modified.
+// 			// page is referenced or modified.
 //     bool dirty;         // This bit is set by the hardware every time the
-//             // page is modified.
+// 			// page is modified.
 //     int createTime; // 用于FIFO的置换算法，记录谁先来的
 //     int visitTime; // 用于LRU置换算法，记录最近一次访问时间
 // };
+class TranslationEntry {
+  public:
+    int virtualPage;    // The page number in virtual memory.
+    int physicalPage;   // The page number in real memory (relative to the
+            //  start of "mainMemory"
+    int pid;
+    bool valid;         // If this bit is set, the translation is ignored.
+            // (In other words, the entry hasn't been initialized.)
+    bool readOnly;  // If this bit is set, the user program is not allowed
+            // to modify the contents of the page.
+    bool use;           // This bit is set by the hardware every time the
+            // page is referenced or modified.
+    bool dirty;         // This bit is set by the hardware every time the
+            // page is modified.
+    int createTime; // 用于FIFO的置换算法，记录谁先来的
+    int visitTime; // 用于LRU置换算法，记录最近一次访问时间
+};
 
 #endif

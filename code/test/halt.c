@@ -19,27 +19,6 @@ main()
 	int d = 4;
 	d = a + b;
 	d = d * c;
-	for(a = 0;a < 10;a++){
-		d = d + a;
-		b++;
-		c++;
-		b = a + b;
-		d = d * c;
-	}
-	a = a +  1;
-	a = b * c;
-	c = a;
-	a++;
-	a++;
-	for(a = 0;a < 10;a++){
-		d = d + a;
-		b++;
-		c++;
-		b = a + b;
-		d = d * c;
-	}
-	d = 4;
-	a = a + 1;
     Halt();
     /* not reached */
 }

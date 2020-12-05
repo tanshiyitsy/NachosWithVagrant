@@ -25,7 +25,7 @@
 #include "system.h"
 #include "syscall.h"
 #include "filesys.h"
-#include "thread.h"
+
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -62,16 +62,20 @@ void UserProgClear(){
     // unsigned int pageTableSize;
     int pageTableSize = machine->pageTableSize;
     TranslationEntry *pageTable = machine->pageTable;
-    printf("start to clear bitmap,and clear the pageTable\n");
+    int pid = currentThread->getPid();
+    printf("pid:%d start to clear bitmap,and clear the pageTable\n",currentThread->getPid());
     for(int i = 0;i < pageTableSize;i++){
         // 清除位图标志
         int pn = pageTable[i].physicalPage;
-        if(pn >= 0){
+        int temp_pid = pageTable[i].pid;
+        // printf("i=%d pa=%d va=%d pid=%d\n", i,pageTable[i].physicalPage,pageTable[i].virtualPage,temp_pid);
+        if(pn >= 0 && pid == temp_pid){
             printf("clear the memory of bitmap is %d\n", pageTable[i].physicalPage);
             bitmap->Clear(pageTable[i].physicalPage);
             // 清除pageTable映射
             pageTable[i].virtualPage = i;
             pageTable[i].physicalPage = -1;
+            pageTable[i].pid = -1;
             pageTable[i].valid = FALSE;
             pageTable[i].use = FALSE;
             pageTable[i].dirty = FALSE;
@@ -95,8 +99,25 @@ void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
-    ExceptionType temp = NoException;
-    printf("which=%d type=%d\n", which,type);
+    if(which == NoException)
+        printf("which=%d type=%d NoException\n", which,type);
+    else if(which == PageFaultException);
+        // printf("which=%d type=%d PageFaultException\n", which,type);
+    else if(which == ReadOnlyException)
+        printf("which=%d type=%d PageFaultException\n", which,type);
+    else if(which == BusErrorException)
+        printf("which=%d type=%d BusErrorException\n", which,type);
+    else if(which == AddressErrorException)
+        printf("which=%d type=%d AddressErrorException \n", which,type);
+    else if(which == OverflowException)
+        printf("which=%d type=%d OverflowException\n", which,type);
+    else if(which == IllegalInstrException)
+        printf("which=%d type=%d IllegalInstrException\n", which,type);
+    else if(which == NumExceptionTypes)
+        printf("which=%d type=%d NumExceptionTypes\n", which,type);
+    // printf("which=%d type=%d\n", which,type);
+
+
     if (which == SyscallException) {
     	if(type == SC_Halt){
     		DEBUG('a', "Shutdown, initiated by user program.\n");
@@ -200,28 +221,38 @@ ExceptionHandler(ExceptionType which)
             // 加载并执行name的nachos的可执行文件，返回地址空间标识符
             printf("------------------now in SC_Exec--------------\n");
             int addr = machine->ReadRegister(4);
-            char threadName[20];
+            char fileName[20];
             int i = 0,value = 0;
             do{
-                if(!machine->ReadMem(addr + i),1,&value){
+                if(!machine->ReadMem(addr + i,1,&value)){
                     value = 9;
                     continue;
                 }
-                threadName[i++] = value;
+                fileName[i++] = value;
             }while(value != 0);
-            
+            printf("fileName = %s\n", fileName);
             OpenFile *executable = fileSystem->Open(fileName);
             if(executable == NULL){
                 printf("Unable to open file %s\n", fileName);
+                interrupt->Halt();
                 return;
             }
+            else{
+                printf("successfully open the file\n");
+            }
+
             AddrSpace* space = new AddrSpace(executable,fileName);
             delete executable;
-            currentThread->space = space;
+            // 释放当前进程的页表
+            UserProgClear();
+            printf("InitRegisters.....\n");
             space->InitRegisters();
             space->RestoreState();
+            currentThread->space = space;
+            printf("renew the space....\n");
             // 需要重新fork吗？
             // t-Fork(exec_func,0);
+            printf("rerun....\n");
             machine->Run();
             machine->WriteRegister(2,currentThread->getPid());
             machine->PCAdvanced();
@@ -240,17 +271,24 @@ ExceptionHandler(ExceptionType which)
             // 复制父进程的地址空间
             OpenFile *executable = fileSystem->Open(currentThread->space->fileName);
             if(executable == NULL){
-                printf("Unable to open file %s\n", fileName);
+                printf("Unable to open file %s\n", currentThread->space->fileName);
                 return;
             }
+            else{
+                printf("successfully open the file\n");
+            }
             // 这里的地址空间是打开同一个可执行文件，还是
-            // 子进程的PC指针是和父进程一样？还是为0？
+            // 子进程的PC指针是和父进程一样
+            printf("fork new child_space...\n");
             AddrSpace *child_space = new AddrSpace(executable);
             // 复制space
             child_space->copySpace(currentThread->space);
             delete executable;
             Thread *child = new Thread("child!");
+            printf("pid:%d parent_pid:%d start to copy pageTable\n", child->getPid(),currentThread->getPid());
             child->space = child_space;
+            // machine的寄存器赋值为子进程的func_addr,现在运行的是哪个进程？
+            // fork之后进入就绪队列，当执行该线程时才重新初始化寄存器
             child->Fork(fork_func,func_addr);
             // 判断是否需要抢占
             machine->WriteRegister(2,child->getPid());
@@ -298,14 +336,16 @@ ExceptionHandler(ExceptionType which)
         printf("this prog is going to exit\n");
         UserProgClear();
     }
-    else if((which ==  AddressErrorException) && (type == SC_Halt)){
+    else if((which ==  AddressErrorException)){
         printf("AddressErrorException\n");
-        UserProgClear();
-        interrupt->Halt();
+        ASSERT(FALSE);
+        // UserProgClear();
+        // interrupt->Halt();
     }
     else if((which == IllegalInstrException)){
         // IllegalInstrException, // Unimplemented or reserved instr.
         printf("here is IllegalInstrException\n");
+        ASSERT(FALSE);
     }
     else {
 		printf("Unexpected user mode exception %d %d\n", which, type);

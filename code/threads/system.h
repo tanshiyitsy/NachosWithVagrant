@@ -29,6 +29,8 @@ extern Scheduler *scheduler;			// the ready list
 extern Interrupt *interrupt;			// interrupt status
 extern Statistics *stats;			// performance metrics
 extern Timer *timer;				// the hardware alarm clock
+extern Thread *thread_pool[PID_MAX];
+extern int pid_pool[PID_MAX];
 
 #ifdef USER_PROGRAM
 #include "machine.h"

@@ -195,7 +195,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 
     DEBUG('a', "\tTranslate 0x%x, %s: ", virtAddr, writing ? "write" : "read");
 
-// check for alignment errors
+	// check for alignment errors
     if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
     	DEBUG('a', "alignment problem at %d, size %d!\n", virtAddr, size);
     	return AddressErrorException;
@@ -206,13 +206,13 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     ASSERT(tlb != NULL || pageTable != NULL);
 
 
-// calculate the virtual page number, and offset within the page,
-// from the virtual address
+	// calculate the virtual page number, and offset within the page,
+	// from the virtual address
     vpn = (unsigned) virtAddr / PageSize;
     offset = (unsigned) virtAddr % PageSize;
     // printf("virtAddr = %d vpn = %d offset = %d\n", virtAddr,vpn,offset);
     for (entry = NULL, i = 0; i < TLBSize; i++){
-    	if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
+    	if (tlb[i].valid && (tlb[i].virtualPage == vpn) && (tlb[i].pid == currentThread->getPid())) {
 			entry = &tlb[i];			// FOUND!
 			break;
 	 	}
@@ -310,7 +310,7 @@ ExceptionType Machine::FIFOSwap(int virtAddr){
 
 
 ExceptionType Machine::LRUSwap(int virtAddr){
-	// printf("now started PageFaultException handler\n");
+	printf("now started PageFaultException handler\n");
 	ASSERT(pageTable != NULL);
 	int i;
     unsigned int vpn, offset;
@@ -325,17 +325,15 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 			virtAddr, pageTableSize);
 	    return AddressErrorException;
 	} else if (!pageTable[vpn].valid) {
-	  	//   DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-			// virtAddr, pageTableSize);
-	    // return PageFaultException;
 	    // 不在页表里，去内存里拿
 		// 1. 分配物理页框
 		// 这里还要考虑分配失败的情况，如果失败的话要置换页面
 		// printf("not hint the pageTable\n");
 		int pn = bitmap->Find();
+		int index = vpn;
 		if(pn == -1){
 			// 分配失败
-			int min = pageTable[0].visitTime,index = 0;
+			int min = pageTable[0].visitTime;
 			// 找拥有物理页框的页面进行覆盖
 			for(int i = 0;i < pageTableSize;i++){
 				if(pageTable[i].physicalPage != -1){
@@ -348,14 +346,16 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 			pageTable[index].physicalPage = -1;
 		}
 	
-		// printf("successfully to allocate the bitmap,the pn is %d,va is %d\n",pn,vpn);
+		printf("successfully to allocate the bitmap,the pn is %d,va is %d pid is %d\n",pn,vpn,currentThread->getPid());
 		// 2. 读取一页的内容进来
 		OpenFile *openfile = fileSystem->Open("virtual_memory");
 		openfile->ReadAt(&(machine->mainMemory[pn * PageSize]),PageSize,vpn * PageSize);
+		// 3. 找一个页表项进行刷新
 		pageTable[vpn].physicalPage = pn;
+		pageTable[vpn].pid = currentThread->getPid();
 		pageTable[vpn].valid = TRUE;
 		pageTable[vpn].visitTime = stats->totalTicks;
-		
+		// printf("vpn=%d pa=%d machine->pa=%d\n", vpn,pn,machine->pageTable[vpn].physicalPage);
 	}
 	else{
 		// printf("hint the pageTable\n");
@@ -388,8 +388,6 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 	// 2.3 更新来到时间
 	entry->visitTime = stats->totalTicks;
 	tlb[index] = *entry;
-	// printf("index %d page will be coverd,new virtualPage=%d physicalPage=%d visitTime=%d\n", 
-		// index,tlb[index].virtualPage,tlb[index].physicalPage,tlb[index].visitTime);
 	
 	return NoException;
 }

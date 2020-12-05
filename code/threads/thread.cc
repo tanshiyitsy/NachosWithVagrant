@@ -23,9 +23,7 @@
 #define STACK_FENCEPOST 0xdeadbeef	// this is put at the top of the
 					// execution stack, for detecting 
 					// stack overflows
-
-int pid_pool[PID_MAX];
-Thread *thread_pool[PID_MAX];
+// Thread *thread_pool[PID_MAX];
 //----------------------------------------------------------------------
 // Thread::Thread
 // 	Initialize a thread control block, so that we can then call
