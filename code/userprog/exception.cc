@@ -284,7 +284,7 @@ ExceptionHandler(ExceptionType which)
             Thread *child = new Thread("child!");
             OpenFile *executable = fileSystem->Open(currentThread->space->fileName);
             if(executable == NULL){
-                printf("Unable to open file %s\n", fileName);
+                printf("Unable to open file %s\n", currentThread->space->fileName);
                 interrupt->Halt();
                 return;
             }
