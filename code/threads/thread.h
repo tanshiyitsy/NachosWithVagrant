@@ -113,6 +113,8 @@ class Thread {
     int uid;
     int base_priority;
     int tricks;
+    Thread *parent;
+    Thread *child;
 
   private:
     // some of the private data for this class is listed above

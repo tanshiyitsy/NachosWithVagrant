@@ -70,7 +70,7 @@ void UserProgClear(){
         int temp_pid = pageTable[i].pid;
         // printf("i=%d pa=%d va=%d pid=%d\n", i,pageTable[i].physicalPage,pageTable[i].virtualPage,temp_pid);
         if(pn >= 0 && pid == temp_pid){
-            printf("clear the memory of bitmap is %d\n", pageTable[i].physicalPage);
+            // printf("clear the memory of bitmap is %d\n", pageTable[i].physicalPage);
             bitmap->Clear(pageTable[i].physicalPage);
             // 清除pageTable映射
             pageTable[i].virtualPage = i;
@@ -91,9 +91,19 @@ void exec_func(int which){
 
 }
 void fork_func(int func_addr){
+    // Thread *parent = currentThread->parent;
+    printf("now in child thread,func_addr = %d pid=%d\n", func_addr,currentThread->getPid());
+    // 初始化寄存器,这里的currentThread指的是child
+    currentThread->space->InitRegisters();
+    currentThread->space->RestoreState();
+
+    // printf("child PCReg = %d\n", machine->ReadRegister(PCReg));
     machine->WriteRegister(PCReg,func_addr);
     machine->WriteRegister(NextPCReg,func_addr+4);
+    // printf("child PCReg = %d\n", machine->ReadRegister(PCReg));
     machine->Run();
+    // 这句按理不会执行到
+    ASSERT(FALSE);
 }
 void
 ExceptionHandler(ExceptionType which)
@@ -121,6 +131,7 @@ ExceptionHandler(ExceptionType which)
     if (which == SyscallException) {
     	if(type == SC_Halt){
     		DEBUG('a', "Shutdown, initiated by user program.\n");
+            printf("now in halt\n");
 	        UserProgClear();
 	       	interrupt->Halt();
     	}
@@ -172,6 +183,7 @@ ExceptionHandler(ExceptionType which)
     	}
     	else if(type == SC_Write){
             printf("------------------now in SC_Write--------------\n");
+            printf("currentThread is %d\n", currentThread->getPid());
             // void Write(char *buffer, int size, OpenFileId id);
             // 把buffer里的内容写入file 
             int addr = machine->ReadRegister(4);
@@ -258,8 +270,8 @@ ExceptionHandler(ExceptionType which)
             machine->PCAdvanced();
         }
         else if(type == SC_Fork){
-            // Address 新增属性fileName
-            // 需要逐页复制页表的内容
+            // Address 新增属性fileName,thread新增属性parent和child
+            // 需要逐页复制页表的内容,PTE新增pid属性，深拷贝的时候注意为当前进程 的pid
             // 建立线程，执行fork_func
             // void Fork(void (*func)());
             // 参数为函数指针，其实是用户程序地址空间中函数的虚拟地址
@@ -267,32 +279,28 @@ ExceptionHandler(ExceptionType which)
             // 运行相同的 用户程序，不同的是，fork是从执行位置开始运行的，
             // 因此必须初始化PC为给定的函数指针
             printf("------------------now in SC_Fork--------------\n");
+            // machine->PCAdvanced();
             int func_addr = machine->ReadRegister(4); // 函数指针的位置
-            // 复制父进程的地址空间
-            OpenFile *executable = fileSystem->Open(currentThread->space->fileName);
-            if(executable == NULL){
-                printf("Unable to open file %s\n", currentThread->space->fileName);
-                return;
-            }
-            else{
-                printf("successfully open the file\n");
-            }
-            // 这里的地址空间是打开同一个可执行文件，还是
-            // 子进程的PC指针是和父进程一样
-            printf("fork new child_space...\n");
-            AddrSpace *child_space = new AddrSpace(executable);
-            // 复制space
-            child_space->copySpace(currentThread->space);
-            delete executable;
+            
             Thread *child = new Thread("child!");
-            printf("pid:%d parent_pid:%d start to copy pageTable\n", child->getPid(),currentThread->getPid());
+            OpenFile *executable = fileSystem->Open(currentThread->space->fileName);
+            // 这里的地址空间是打开同一个可执行文件
+            // printf("new child_space...\n");
+            AddrSpace *child_space = new AddrSpace(executable); delete executable;
+            // 复制space,这里拷贝后就出错
+            // child_space->copySpace(currentThread->space,child->getPid());
+            // printf("Finish copy the pageTable\n");
             child->space = child_space;
             // machine的寄存器赋值为子进程的func_addr,现在运行的是哪个进程？
             // fork之后进入就绪队列，当执行该线程时才重新初始化寄存器
+            // printf("now begin to fork\n");
             child->Fork(fork_func,func_addr);
+            // printf("end to fork\n");
+            machine->PCAdvanced();
+            // 这一句必须在child分配内存之后
+            // currentThread->child = child;
             // 判断是否需要抢占
             machine->WriteRegister(2,child->getPid());
-            machine->PCAdvanced();
         }
         else if(type == SC_Yield){
             printf("------------------now in SC_Yield--------------\n");
@@ -305,7 +313,9 @@ ExceptionHandler(ExceptionType which)
             // 2. 检查线程池，确定特定线程是否处于活跃状态，如果活跃，那么切换
             printf("------------------now in SC_Join--------------\n");
             int thread_id = machine->ReadRegister(4);
+            printf("thread_id = %d\n", thread_id);
             while(pid_pool[thread_id] == 1){
+                printf("pid:%d Yield\n", currentThread->getPid());
                 currentThread->Yield();
             }
             machine->PCAdvanced();

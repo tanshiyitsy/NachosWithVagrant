@@ -37,6 +37,7 @@ Machine::Run()
 	       currentThread->getName(), stats->totalTicks);
     interrupt->setStatus(UserMode);
     for (;;) {
+    	// printf("currentThread pid = %d\n", currentThread->getPid());
         OneInstruction(instr);
 		interrupt->OneTick();
 		if (singleStep && (runUntilTime <= stats->totalTicks))
@@ -98,9 +99,12 @@ Machine::OneInstruction(Instruction *instr)
     int nextLoadValue = 0; 	// record delayed load operation, to apply
 				// in the future
 
+    // printf("PCReg=%d currentThread pid = %d\n", registers[PCReg],currentThread->getPid());
     // Fetch instruction 
-    if (!machine->ReadMem(registers[PCReg], 4, &raw))
-	return;			// exception occurred
+    if (!machine->ReadMem(registers[PCReg], 4, &raw)){
+    	return;			// exception occurred
+    }
+	
 	
     instr->value = raw; // 这里的raw全是数字
     instr->Decode();
@@ -537,9 +541,10 @@ Machine::OneInstruction(Instruction *instr)
       case OP_SYSCALL:
       // printf("last op\n");
       // 最后一个异常是在这里抛出的
-      	printf("next is going to enter SyscallException\n");
+      	printf("pid:%d next is going to enter SyscallException, PCReg = %d\n",currentThread->getPid(), registers[PCReg]);
 		RaiseException(SyscallException, 0);
-	return; 
+		// printf("SyscallException handler over,PCReg = %d\n", registers[PCReg]);
+		return; 
 	
       case OP_XOR:
 	registers[instr->rd] = registers[instr->rs] ^ registers[instr->rt];

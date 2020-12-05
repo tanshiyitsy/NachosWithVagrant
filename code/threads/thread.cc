@@ -60,6 +60,8 @@ Thread::Thread(char* threadName, int priority)
 
 #ifdef USER_PROGRAM
     space = NULL;
+    parent = NULL;
+    child = NULL;
 #endif
 }
 Thread::Thread(char* threadName)
@@ -90,6 +92,8 @@ Thread::Thread(char* threadName)
 
 #ifdef USER_PROGRAM
     space = NULL;
+    parent = NULL;
+    child = NULL;
 #endif
 }
 
@@ -140,6 +144,7 @@ Thread::Fork(VoidFunctionPtr func, int arg)
     DEBUG('t', "Forking thread \"%s\" with func = 0x%x, arg = %d\n",
 	  name, (int) func, arg);
     
+    // printf("now in  fork\n");
     StackAllocate(func, arg);
 
     IntStatus oldLevel = interrupt->SetLevel(IntOff);

@@ -106,7 +106,7 @@ void
 Machine::RaiseException(ExceptionType which, int badVAddr)
 {
     DEBUG('m', "Exception: %s\n", exceptionNames[which]);
-//  ASSERT(interrupt->getStatus() == UserMode);
+    //  ASSERT(interrupt->getStatus() == UserMode);
     registers[BadVAddrReg] = badVAddr;
     DelayedLoad(0, 0);			// finish anything in progress
     interrupt->setStatus(SystemMode);
@@ -216,10 +216,8 @@ void Machine::WriteRegister(int num, int value)
     registers[num] = value;
 }
 void Machine::PCAdvanced(){
-    // registers[PrevPCReg] = registers[PCReg]; 
-    // registers[PCReg] = registers[NextPCReg];
-    // registers[NextPCReg] = pcAfter;
     WriteRegister(PrevPCReg,registers[PCReg]);
     WriteRegister(PCReg,registers[NextPCReg]);
-    WriteRegister(NextPCReg,registers[NextPCReg] + sizeof(int));
+    // WriteRegister(NextPCReg,registers[NextPCReg] + 4);
+    WriteRegister(NextPCReg,registers[NextPCReg]+4);
 }

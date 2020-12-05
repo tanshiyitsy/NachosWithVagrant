@@ -96,8 +96,8 @@ Machine::ReadMem(int addr, int size, int *value)
     exception = Translate(addr, &physicalAddress, size, FALSE);
     // printf("VA=%d PA=%d\n", addr, physicalAddress);
     if (exception != NoException) {
-	   machine->RaiseException(exception, addr);
-	   return FALSE;
+	   	machine->RaiseException(exception, addr);
+	   	return FALSE;
     }
     switch (size) {
       case 1:
@@ -221,6 +221,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 	if (entry == NULL) {				// not found
     	    DEBUG('a', "*** no valid TLB entry found for this virtual page!\n");
     	    // printf("*** no valid TLB entry found for this virtual page!\n");
+    	    // printf("pid = %d vpn=%d\n", currentThread->getPid(),vpn);
     	    return PageFaultException;		// really, this is a TLB fault,
 						// the page may be in memory,
 						// but not in the TLB
@@ -310,7 +311,7 @@ ExceptionType Machine::FIFOSwap(int virtAddr){
 
 
 ExceptionType Machine::LRUSwap(int virtAddr){
-	printf("now started PageFaultException handler\n");
+	// printf("now started PageFaultException handler\n");
 	ASSERT(pageTable != NULL);
 	int i;
     unsigned int vpn, offset;
@@ -324,7 +325,7 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
 			virtAddr, pageTableSize);
 	    return AddressErrorException;
-	} else if (!pageTable[vpn].valid) {
+	} else if (!pageTable[vpn].valid || (pageTable[vpn].pid != currentThread->getPid())) {
 	    // 不在页表里，去内存里拿
 		// 1. 分配物理页框
 		// 这里还要考虑分配失败的情况，如果失败的话要置换页面
@@ -346,7 +347,7 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 			pageTable[index].physicalPage = -1;
 		}
 	
-		printf("successfully to allocate the bitmap,the pn is %d,va is %d pid is %d\n",pn,vpn,currentThread->getPid());
+		// printf("successfully to allocate the bitmap,the pn is %d,va is %d pid is %d\n",pn,vpn,currentThread->getPid());
 		// 2. 读取一页的内容进来
 		OpenFile *openfile = fileSystem->Open("virtual_memory");
 		openfile->ReadAt(&(machine->mainMemory[pn * PageSize]),PageSize,vpn * PageSize);
@@ -388,6 +389,6 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 	// 2.3 更新来到时间
 	entry->visitTime = stats->totalTicks;
 	tlb[index] = *entry;
-	
+	// printf("tlb has been renewed,pa=%d va=%d pid=%d\n",tlb[index].physicalPage,tlb[index].virtualPage,tlb[index].pid);
 	return NoException;
 }

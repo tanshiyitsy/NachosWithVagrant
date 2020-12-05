@@ -112,7 +112,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     // printf("allocate process finish\n");
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-    bzero(machine->mainMemory, size);
+    // bzero(machine->mainMemory, size);
 
     fileSystem->Create("virtual_memory",size);
     OpenFile *openfile = fileSystem->Open("virtual_memory");
@@ -307,14 +307,16 @@ void AddrSpace::RestoreState()
     machine->pageTableSize = numPages;
 }
 // 复制
-void AddrSpace::copySpace(AddrSpace* parent_space){
+void AddrSpace::copySpace(AddrSpace* parent_space,int child_pid){
     // 1. 页表
     pageTable = new TranslationEntry[numPages];
     TranslationEntry *parent_pageTable = parent_space->pageTable;
+    Thread *child = currentThread->child;
     for (int i = 0; i < numPages; i++) {
         pageTable[i].virtualPage = parent_pageTable[i].virtualPage; 
         pageTable[i].physicalPage = parent_pageTable[i].physicalPage;
         pageTable[i].valid = parent_pageTable[i].valid;
+        pageTable[i].pid = child_pid;
         pageTable[i].use = parent_pageTable[i].use;
         pageTable[i].dirty = parent_pageTable[i].dirty;
         pageTable[i].readOnly = parent_pageTable[i].readOnly; 
