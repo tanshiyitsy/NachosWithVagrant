@@ -38,6 +38,9 @@
 #include "copyright.h"
 #include "openfile.h"
 
+// nachos实现了两套文件系统，它们对外接口是完全一样的
+// 一套叫做FILESYS_STUB，这是建立在UNIX文件系统之上的，而不使用nachos的模拟磁盘，
+// 另一套是nachos的文件系统，这个是实现在nachos的虚拟磁盘上
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
 				// implementation is available
@@ -67,27 +70,34 @@ class FileSystem {
 #else // FILESYS
 class FileSystem {
   public:
+    // 生成方法，format：是否进行格式化的标志
+    // 在同步磁盘的基础上建立一个文件系统，当format标志设置时，建立一个行的文件系统；否则使用原来文件系统中的内容
     FileSystem(bool format);		// Initialize the file system.
 					// Must be called *after* "synchDisk" 
 					// has been initialized.
     					// If "format", there is nothing on
 					// the disk, so initialize the directory
     					// and the bitmap of free blocks.
-
+    // 生成一个文件
     bool Create(char *name, int initialSize);  	
 					// Create a file (UNIX creat)
 
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
 
+    // 删除一个文件
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
 
+    // 列出文件系统中的所有文件，即根目录中的所有文件
     void List();			// List all the files in the file system
 
+    // 列出文件系统中所以的文件及内容
     void Print();			// List all the files and their contents
 
   private:
+    // 位图文件打开文件结构
    OpenFile* freeMapFile;		// Bit map of free disk blocks,
 					// represented as a file
+   // 根目录打开文件结构
    OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
 };

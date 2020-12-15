@@ -26,10 +26,11 @@
 // returning.
 class SynchDisk {
   public:
-    SynchDisk(char* name);    		// Initialize a synchronous disk,
+    SynchDisk(char* name);    		// Initialize a synchronous disk,生成一个同步磁盘
 					// by initializing the raw Disk.
     ~SynchDisk();			// De-allocate the synch disk data
     
+    // 同步读写磁盘，只有当真正读写完毕后返回
     void ReadSector(int sectorNumber, char* data);
     					// Read/write a disk sector, returning
     					// only once the data is actually read 
@@ -38,14 +39,18 @@ class SynchDisk {
 					// then wait until the request is done.
     void WriteSector(int sectorNumber, char* data);
     
+    // 磁盘中断处理时调用
     void RequestDone();			// Called by the disk device interrupt
 					// handler, to signal that the
 					// current disk operation is complete.
 
   private:
+    // 物理异步磁盘设备
     Disk *disk;		  		// Raw disk device
+    // 控制读写磁盘返回的信号量
     Semaphore *semaphore; 		// To synchronize requesting thread 
 					// with the interrupt handler
+    // 控制只有一个线程访问的锁
     Lock *lock;		  		// Only one read/write request
 					// can be sent to the disk at a time
 };

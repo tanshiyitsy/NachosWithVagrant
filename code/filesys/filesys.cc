@@ -81,21 +81,25 @@ FileSystem::FileSystem(bool format)
 { 
     DEBUG('f', "Initializing the file system.\n");
     if (format) {
+        // 设置了format，生成一个新的文件系统
+        // 1. 生成新的位图和空白的根目录
         BitMap *freeMap = new BitMap(NumSectors);
         Directory *directory = new Directory(NumDirEntries);
-	FileHeader *mapHdr = new FileHeader;
-	FileHeader *dirHdr = new FileHeader;
+        // 2. 生成位图FileHeader和目录FileHeader
+    	FileHeader *mapHdr = new FileHeader;
+    	FileHeader *dirHdr = new FileHeader;
 
         DEBUG('f', "Formatting the file system.\n");
 
     // First, allocate space for FileHeaders for the directory and bitmap
     // (make sure no one else grabs these!)
-	freeMap->Mark(FreeMapSector);	    
-	freeMap->Mark(DirectorySector);
+        // 3. 在位图中标识0和1号扇区被占用（虽然此时还没有占用）
+    	freeMap->Mark(FreeMapSector);	    
+    	freeMap->Mark(DirectorySector);
 
     // Second, allocate space for the data blocks containing the contents
     // of the directory and bitmap files.  There better be enough space!
-
+        // 4. 为位图和目录文件申请必要的空间，如果申请不到，系统出错返回
 	ASSERT(mapHdr->Allocate(freeMap, FreeMapFileSize));
 	ASSERT(dirHdr->Allocate(freeMap, DirectoryFileSize));
 
@@ -103,15 +107,15 @@ FileSystem::FileSystem(bool format)
     // We need to do this before we can "Open" the file, since open
     // reads the file header off of disk (and currently the disk has garbage
     // on it!).
-
+        // 5. 将位图FileHeader和目录FileHeader写回0和1号扇区，此时的位图文件和目录文件所在位置已经确定
         DEBUG('f', "Writing headers back to disk.\n");
-	mapHdr->WriteBack(FreeMapSector);    
-	dirHdr->WriteBack(DirectorySector);
+    	mapHdr->WriteBack(FreeMapSector);    
+    	dirHdr->WriteBack(DirectorySector);
 
     // OK to open the bitmap and directory files now
     // The file system operations assume these two files are left open
     // while Nachos is running.
-
+        // 6. 打开位图文件和目录文件
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
      
@@ -121,22 +125,25 @@ FileSystem::FileSystem(bool format)
     // sectors on the disk have been allocated for the file headers and
     // to hold the file data for the directory and bitmap.
 
+        // 7. 将当前的位图和目录写入相应的文件中，而且这两个文件保持打开状态
         DEBUG('f', "Writing bitmap and directory back to disk.\n");
-	freeMap->WriteBack(freeMapFile);	 // flush changes to disk
-	directory->WriteBack(directoryFile);
+    	freeMap->WriteBack(freeMapFile);	 // flush changes to disk
+    	directory->WriteBack(directoryFile);
 
 	if (DebugIsEnabled('f')) {
 	    freeMap->Print();
 	    directory->Print();
 
         delete freeMap; 
-	delete directory; 
-	delete mapHdr; 
-	delete dirHdr;
+    	delete directory; 
+    	delete mapHdr; 
+    	delete dirHdr;
 	}
     } else {
-    // if we are not formatting the disk, just open the files representing
-    // the bitmap and directory; these are left open while Nachos is running
+        // 没有设置format，使用原有的文件系统
+        // 打开位图文件和目录文件，返回
+        // if we are not formatting the disk, just open the files representing
+        // the bitmap and directory; these are left open while Nachos is running
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
     }
@@ -170,7 +177,8 @@ FileSystem::FileSystem(bool format)
 //	"name" -- name of file to be created
 //	"initialSize" -- size of file to be created
 //----------------------------------------------------------------------
-
+// name创建的文件名 initialize：创建的文件的初始大小
+// 功能：在当前的文件系统中创建一个固定大小的文件
 bool
 FileSystem::Create(char *name, int initialSize)
 {
@@ -182,30 +190,36 @@ FileSystem::Create(char *name, int initialSize)
 
     DEBUG('f', "Creating file %s, size %d\n", name, initialSize);
 
+    // 1. 在根目录下搜寻该文件名
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
 
     if (directory->Find(name) != -1)
       success = FALSE;			// file is already in directory
-    else {	
+    else {
+        // 2. 申请FileHeader所需的空间，如果申请不到，出错返回
         freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
         sector = freeMap->Find();	// find a sector to hold the file header
     	if (sector == -1) 		
             success = FALSE;		// no free block for file header 
+        // 3. 将文件加到目录文件中，如果失败，出错返回
         else if (!directory->Add(name, sector))
             success = FALSE;	// no space in directory
-	else {
-    	    hdr = new FileHeader;
-	    if (!hdr->Allocate(freeMap, initialSize))
-            	success = FALSE;	// no space on disk for data
-	    else {	
-	    	success = TRUE;
-		// everthing worked, flush all changes back to disk
+    	else {
+                // 4. 为新文件申请FileHeader
+        	    hdr = new FileHeader;
+                // 5. 根据新文件的大小申请相应块数的扇区，如果失败，出错返回
+    	    if (!hdr->Allocate(freeMap, initialSize))
+                	success = FALSE;	// no space on disk for data
+    	    else {	
+                // 6. 将所有有变化的数据结构写入磁盘
+    	    	success = TRUE;
+		        // everthing worked, flush all changes back to disk
     	    	hdr->WriteBack(sector); 		
     	    	directory->WriteBack(directoryFile);
     	    	freeMap->WriteBack(freeMapFile);
-	    }
+    	    }
             delete hdr;
 	}
         delete freeMap;
@@ -227,6 +241,7 @@ FileSystem::Create(char *name, int initialSize)
 OpenFile *
 FileSystem::Open(char *name)
 { 
+    // 1. 根目录下搜寻该文件名
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
     int sector;
@@ -234,8 +249,9 @@ FileSystem::Open(char *name)
     DEBUG('f', "Opening file %s\n", name);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name); 
+    // 2. 如果搜索到，打开该文件并返回
     if (sector >= 0) 		
-	openFile = new OpenFile(sector);	// name was found in directory 
+	   openFile = new OpenFile(sector);	// name was found in directory 
     delete directory;
     return openFile;				// return NULL if not found
 }
@@ -253,7 +269,7 @@ FileSystem::Open(char *name)
 //
 //	"name" -- the text name of the file to be removed
 //----------------------------------------------------------------------
-
+// name需要删除的文件名
 bool
 FileSystem::Remove(char *name)
 { 
@@ -262,6 +278,7 @@ FileSystem::Remove(char *name)
     FileHeader *fileHdr;
     int sector;
     
+    // 1. 在根目录下搜索该文件名
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name);
@@ -269,9 +286,13 @@ FileSystem::Remove(char *name)
        delete directory;
        return FALSE;			 // file not found 
     }
+    // 2. 如果搜索到，打开该文件并返回打开文件控制表
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
 
+    // 3. 将文件从目录中删除
+    // 4. 释放FileHeader占用的空间
+    // 5. 释放文件数据块占用的空间
     freeMap = new BitMap(NumSectors);
     freeMap->FetchFrom(freeMapFile);
 
@@ -279,6 +300,7 @@ FileSystem::Remove(char *name)
     freeMap->Clear(sector);			// remove header block
     directory->Remove(name);
 
+    // 6. 将对位图和目录的修改写回磁盘
     freeMap->WriteBack(freeMapFile);		// flush to disk
     directory->WriteBack(directoryFile);        // flush to disk
     delete fileHdr;

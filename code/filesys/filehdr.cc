@@ -38,10 +38,10 @@
 //	"fileSize" is the bit map of free disk sectors
 //----------------------------------------------------------------------
 
-bool
-FileHeader::Allocate(BitMap *freeMap, int fileSize)
+bool FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
     numBytes = fileSize;
+    // SectorSize = 128 ，divRoundUp 向上取整
     numSectors  = divRoundUp(fileSize, SectorSize);
     if (freeMap->NumClear() < numSectors)
 	return FALSE;		// not enough space

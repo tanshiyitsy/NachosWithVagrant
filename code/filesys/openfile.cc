@@ -112,10 +112,11 @@ OpenFile::Write(char *into, int numBytes)
 //	"position" -- the offset within the file of the first byte to be
 //			read/written
 //----------------------------------------------------------------------
-
+// 将position开始的numBytes读入into缓冲
 int
 OpenFile::ReadAt(char *into, int numBytes, int position)
 {
+    // 1. 计算实际需要读出的字节数
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     char *buf;
@@ -127,25 +128,30 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
     DEBUG('f', "Reading %d bytes at %d, from file of length %d.\n", 	
 			numBytes, position, fileLength);
 
+    // 2. 计算需要读出内容的扇区起始地址
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);
     numSectors = 1 + lastSector - firstSector;
 
+    // 3. 将这些扇区的内容读入一个内部缓冲
     // read in all the full and partial sectors that we need
     buf = new char[numSectors * SectorSize];
     for (i = firstSector; i <= lastSector; i++)	
         synchDisk->ReadSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);
 
+    // 4. 将内容从缓冲中拷贝到into中
     // copy the part we want
     bcopy(&buf[position - (firstSector * SectorSize)], into, numBytes);
     delete [] buf;
     return numBytes;
 }
 
+// 将from缓冲中的numBytes字节从position开始的位置写入文件
 int
 OpenFile::WriteAt(char *from, int numBytes, int position)
 {
+    // 1. 计算实际需要读出的字节数
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     bool firstAligned, lastAligned;
@@ -158,26 +164,31 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
 			numBytes, position, fileLength);
 
+    // 2. 计算出需要读出内容的扇区起始地址
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);
     numSectors = 1 + lastSector - firstSector;
 
+    // 3. 申请一个内部缓冲
     buf = new char[numSectors * SectorSize];
 
+    // 4. 将首尾扇区中不能修改内容先读入内部缓冲适当位置
     firstAligned = (position == (firstSector * SectorSize));
     lastAligned = ((position + numBytes) == ((lastSector + 1) * SectorSize));
 
-// read in first and last sector, if they are to be partially modified
+    // read in first and last sector, if they are to be partially modified
     if (!firstAligned)
         ReadAt(buf, SectorSize, firstSector * SectorSize);	
     if (!lastAligned && ((firstSector != lastSector) || firstAligned))
         ReadAt(&buf[(lastSector - firstSector) * SectorSize], 
 				SectorSize, lastSector * SectorSize);	
 
-// copy in the bytes we want to change 
+    // 5. 将需要写入文件的内容写入内部缓冲适当位置
+    // copy in the bytes we want to change 
     bcopy(from, &buf[position - (firstSector * SectorSize)], numBytes);
 
-// write modified sectors back
+    // 6. 将内部缓冲中内容写入磁盘
+    // write modified sectors back
     for (i = firstSector; i <= lastSector; i++)	
         synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);

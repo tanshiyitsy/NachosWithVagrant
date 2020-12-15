@@ -30,7 +30,8 @@
 // for instance, disk sectors, or main memory pages.
 // Each bit represents whether the corresponding sector or page is
 // in use or free.
-
+// nachos的文件系统，是通过位图来管理空闲块的
+// nachos的物理访问以扇区为访问单位，将扇区从0开始编号
 class BitMap {
   public:
     BitMap(int nitems);		// Initialize a bitmap, with "nitems" bits

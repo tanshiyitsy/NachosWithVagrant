@@ -68,13 +68,18 @@ SynchDisk::~SynchDisk()
 //	"sectorNumber" -- the disk sector to read
 //	"data" -- the buffer to hold the contents of the disk sector
 //----------------------------------------------------------------------
-
+// 当线程向磁盘设备发出读访问请求后，等待磁盘中断的到来，一旦磁盘中断来到，
+// 中断处理程序执行semaphore->V(),ReadSector得以继续运行
 void
 SynchDisk::ReadSector(int sectorNumber, char* data)
 {
+    // 一次只允许一个线程访问
     lock->Acquire();			// only one disk I/O at a time
+    // 对磁盘进行读访问请求
     disk->ReadRequest(sectorNumber, data);
+    // 等待磁盘中断
     semaphore->P();			// wait for interrupt
+    // 解锁，访问结束
     lock->Release();
 }
 
