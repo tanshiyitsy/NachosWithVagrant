@@ -207,10 +207,13 @@ Directory::Print()
     FileHeader *hdr = new FileHeader;
 
     printf("Directory contents:\n");
+    printf("Name\tSector\ttype\tpath\tctime\tlast_vtime\tlast_mtime\t\n");
     for (int i = 0; i < tableSize; i++)
 	if (table[i].inUse) {
-	    printf("Name: %s, Sector: %d type:%d path:%s\n", table[i].name, table[i].sector,table[i].type,table[i].path);
+	    // printf("Name: %s, Sector: %d type:%d path:%s\n", table[i].name, table[i].sector,table[i].type,table[i].path);
 	    hdr->FetchFrom(table[i].sector);
+        printf("%s\t%d\t%d\t%s\t%s\t%s\t%s\t\n", table[i].name,table[i].sector,table[i].type,table[i].path,
+            hdr->get_ctime(),hdr->get_last_vtime(),hdr->get_last_mtime());
 	    hdr->Print();
 	}
     printf("\n");

@@ -26,6 +26,8 @@
 
 #include "system.h"
 #include "filehdr.h"
+#include "time.h"
+#include "string.h"
 
 //----------------------------------------------------------------------
 // FileHeader::Allocate
@@ -147,4 +149,25 @@ FileHeader::Print()
         printf("\n"); 
     }
     delete [] data;
+}
+void FileHeader::set_ctime(){
+    time_t timep;
+    time(&timep);
+    strncpy(ctime,asctime(gmtime(&timep)),25);
+    ctime[24] = '\0';
+    printf("ctime is %s\n", ctime);
+}
+void FileHeader::set_last_vtime(){
+    time_t timep;
+    time(&timep);
+    strncpy(last_vtime,asctime(gmtime(&timep)),25);
+    last_vtime[24] = '\0';
+    printf("last_vtime is %s\n", last_vtime);
+}
+void FileHeader::set_last_mtime(){
+    time_t timep;
+    time(&timep);
+    strncpy(last_mtime,asctime(gmtime(&timep)),25);
+    last_mtime[24]='\0';
+    printf("last_mtime is %s\n", last_mtime);
 }

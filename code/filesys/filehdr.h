@@ -57,8 +57,17 @@ class FileHeader {
 					// in bytes
 
     void Print();			// Print the contents of the file.
+    void set_ctime();
+    void set_last_vtime();
+    void set_last_mtime();
+    char *get_ctime(){ return ctime;}
+    char *get_last_vtime(){ return last_vtime;}
+    char *get_last_mtime(){ return last_mtime;}
 
   private:
+    char ctime[25];
+    char last_vtime[25];
+    char last_mtime[25];
     int numBytes;			// Number of bytes in the file
     int numSectors;			// Number of data sectors in the file
     int dataSectors[NumDirect];		// Disk sector numbers for each data 

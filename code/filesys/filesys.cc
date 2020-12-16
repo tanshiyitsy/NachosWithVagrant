@@ -105,8 +105,8 @@ FileSystem::FileSystem(bool format)
     // on it!).
 
         DEBUG('f', "Writing headers back to disk.\n");
-	mapHdr->WriteBack(FreeMapSector);    
-	dirHdr->WriteBack(DirectorySector);
+    	mapHdr->WriteBack(FreeMapSector);    
+    	dirHdr->WriteBack(DirectorySector);
 
     // OK to open the bitmap and directory files now
     // The file system operations assume these two files are left open
@@ -200,11 +200,14 @@ FileSystem::Create(char *name, int initialSize)
 	    if (!hdr->Allocate(freeMap, initialSize))
             	success = FALSE;	// no space on disk for data
 	    else {	
-	    	success = TRUE;
-		// everthing worked, flush all changes back to disk
-    	    	hdr->WriteBack(sector); 		
-    	    	directory->WriteBack(directoryFile);
-    	    	freeMap->WriteBack(freeMapFile);
+        	success = TRUE;
+    	    // everthing worked, flush all changes back to disk
+            hdr->set_ctime();
+            hdr->set_last_vtime();
+            hdr->set_last_mtime();
+	    	hdr->WriteBack(sector); 		
+	    	directory->WriteBack(directoryFile);
+	    	freeMap->WriteBack(freeMapFile);
 	    }
             delete hdr;
 	}

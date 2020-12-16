@@ -182,9 +182,11 @@ void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
-    testExercise2("testfile");
-    printf("--------------list file-------------\n");
-    fileSystem->List();
+    testExercise2("testfile1");
+    testExercise2("testfile2");
+    testExercise2("testfile3");
+    printf("-----------------------------------------list file-----------------------------\n");
+    fileSystem->Print();
     // stats->Print();
     // FileWrite();
     // FileRead();
