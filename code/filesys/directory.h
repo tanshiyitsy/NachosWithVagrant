@@ -34,8 +34,11 @@ class DirectoryEntry {
     bool inUse;				// Is this directory entry in use?
     int sector;				// Location on disk to find the 
 					//   FileHeader for this file 
-    char name[FileNameMaxLen + 1];	// Text name for file, with +1 for 
+    // char name[FileNameMaxLen + 1];	// Text name for file, with +1 for 
 					// the trailing '\0'
+    char *name;
+    int type;
+    char *path;
 };
 
 // The following class defines a UNIX-like "directory".  Each entry in
@@ -62,6 +65,7 @@ class Directory {
 					// FileHeader for file: "name"
 
     bool Add(char *name, int newSector);  // Add a file name into the directory
+    bool Add(char *name, int newSector,int type,char *path);
 
     bool Remove(char *name);		// Remove a file from the directory
 

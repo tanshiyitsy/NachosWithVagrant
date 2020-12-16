@@ -193,7 +193,7 @@ FileSystem::Create(char *name, int initialSize)
         sector = freeMap->Find();	// find a sector to hold the file header
     	if (sector == -1) 		
             success = FALSE;		// no free block for file header 
-        else if (!directory->Add(name, sector))
+        else if (!directory->Add(name, sector,NORFILE,"/root/"))
             success = FALSE;	// no space in directory
 	else {
     	    hdr = new FileHeader;

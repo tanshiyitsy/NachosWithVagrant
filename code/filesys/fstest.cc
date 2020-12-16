@@ -168,18 +168,30 @@ FileRead()
     delete [] buffer;
     delete openFile;	// close file
 }
+void testExercise2(char *filename){
+    if (!fileSystem->Create(filename, 0)) {
+      printf("Perf test: can't create %s\n", filename);
+      return;
+    }
+    else{
+        printf("successfully create file:%s\n",filename);
+    }
 
+}
 void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
-    stats->Print();
-    FileWrite();
-    FileRead();
-    if (!fileSystem->Remove(FileName)) {
-      printf("Perf test: unable to remove %s\n", FileName);
-      return;
-    }
-    stats->Print();
+    testExercise2("testfile");
+    printf("--------------list file-------------\n");
+    fileSystem->List();
+    // stats->Print();
+    // FileWrite();
+    // FileRead();
+    // if (!fileSystem->Remove(FileName)) {
+    //   printf("Perf test: unable to remove %s\n", FileName);
+    //   return;
+    // }
+    // stats->Print();
 }
 

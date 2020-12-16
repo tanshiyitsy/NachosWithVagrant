@@ -16,6 +16,8 @@
 
 #include "disk.h"
 #include "bitmap.h"
+#define DIRECTORY 0
+#define NORFILE 1
 
 #define NumDirect 	((SectorSize - 2 * sizeof(int)) / sizeof(int))
 #define MaxFileSize 	(NumDirect * SectorSize)

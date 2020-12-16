@@ -24,6 +24,7 @@
 #include "utility.h"
 #include "filehdr.h"
 #include "directory.h"
+#include "malloc.h"
 
 //----------------------------------------------------------------------
 // Directory::Directory
@@ -141,6 +142,26 @@ Directory::Add(char *name, int newSector)
 	}
     return FALSE;	// no space.  Fix when we have extensible files.
 }
+bool
+Directory::Add(char *name, int newSector,int type,char *path)
+{ 
+    if (FindIndex(name) != -1)
+    return FALSE;
+
+    for (int i = 0; i < tableSize; i++)
+        if (!table[i].inUse) {
+            table[i].inUse = TRUE;
+            table[i].name = (char *)malloc(sizeof(char) * strlen(name));
+            strcpy(table[i].name, name);
+            table[i].sector = newSector;
+            table[i].type = type;
+            table[i].path = (char *)malloc(sizeof(char) * strlen(path));
+            strcpy(table[i].path, path);
+
+        return TRUE;
+    }
+    return FALSE;   // no space.  Fix when we have extensible files.
+}
 
 //----------------------------------------------------------------------
 // Directory::Remove
@@ -188,7 +209,7 @@ Directory::Print()
     printf("Directory contents:\n");
     for (int i = 0; i < tableSize; i++)
 	if (table[i].inUse) {
-	    printf("Name: %s, Sector: %d\n", table[i].name, table[i].sector);
+	    printf("Name: %s, Sector: %d type:%d path:%s\n", table[i].name, table[i].sector,table[i].type,table[i].path);
 	    hdr->FetchFrom(table[i].sector);
 	    hdr->Print();
 	}
