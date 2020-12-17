@@ -76,11 +76,12 @@ bool
 BitMap::Test(int which)
 {
     ASSERT(which >= 0 && which < numBits);
-    
-    if (map[which / BitsInWord] & (1 << (which % BitsInWord)))
-	return TRUE;
-    else
-	return FALSE;
+    if (map[which / BitsInWord] & (1 << (which % BitsInWord))){
+        return TRUE;
+    }
+    else{
+        return FALSE;
+    }
 }
 
 //----------------------------------------------------------------------
@@ -112,10 +113,12 @@ BitMap::Find()
 int 
 BitMap::NumClear() 
 {
+    printf(" in NumClear...\n");
     int count = 0;
 
     for (int i = 0; i < numBits; i++)
 	if (!Test(i)) count++;
+    printf("count is %d\n", count);
     return count;
 }
 

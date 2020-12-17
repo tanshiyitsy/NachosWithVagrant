@@ -192,7 +192,8 @@ void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
-    testExercise3("testfile_this_is_a_very_long_filename_test1");
+    // testExercise3("testfile_this_is_a_very_long_filename_test1");
+    testExercise3("testfile");
     printf("-----------------------------------------list file-----------------------------\n");
     fileSystem->Print();
     // stats->Print();

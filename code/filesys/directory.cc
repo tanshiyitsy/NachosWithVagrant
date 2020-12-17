@@ -151,15 +151,15 @@ Directory::Add(char *name, int newSector,int type,char *path)
     for (int i = 0; i < tableSize; i++)
         if (!table[i].inUse) {
             table[i].inUse = TRUE;
-            table[i].name = (char *)malloc(sizeof(char) * strlen(name));
-            strcpy(table[i].name, name);
+            // table[i].name = new char(strlen(name));
+            strncpy(table[i].name, name,FileNameMaxLen);
             table[i].sector = newSector;
             table[i].type = type;
-            table[i].path = (char *)malloc(sizeof(char) * strlen(path));
-            strcpy(table[i].path, path);
-
-        return TRUE;
-    }
+            // table[i].path = new char(strlen(path));
+            strncpy(table[i].path, path, FilePathMaxLen);
+            printf("gagfagfd name is %s path is %s\n", table[i].name,table[i].path);
+            return TRUE;
+        }
     return FALSE;   // no space.  Fix when we have extensible files.
 }
 
@@ -190,6 +190,7 @@ Directory::Remove(char *name)
 void
 Directory::List()
 {
+    printf("in Directory list\n");
    for (int i = 0; i < tableSize; i++)
 	if (table[i].inUse)
 	    printf("%s\n", table[i].name);

@@ -193,21 +193,27 @@ FileSystem::Create(char *name, int initialSize)
         sector = freeMap->Find();	// find a sector to hold the file header
     	if (sector == -1) 		
             success = FALSE;		// no free block for file header 
-        else if (!directory->Add(name, sector,NORFILE,"/root/"))
+        // #define DIRECTORY 0
+        // #define NORFILE 1
+        else if (!directory->Add(name, sector,NORFILE,"/root"))
             success = FALSE;	// no space in directory
 	else {
+            // printf("after directory add...\n");
     	    hdr = new FileHeader;
-	    if (!hdr->Allocate(freeMap, initialSize))
-            	success = FALSE;	// no space on disk for data
-	    else {	
-        	success = TRUE;
-    	    // everthing worked, flush all changes back to disk
-            hdr->set_ctime();
-            hdr->set_last_vtime();
-            hdr->set_last_mtime();
-	    	hdr->WriteBack(sector); 		
-	    	directory->WriteBack(directoryFile);
-	    	freeMap->WriteBack(freeMapFile);
+    	    if (!hdr->Allocate(freeMap, initialSize))
+                	success = FALSE;	// no space on disk for data
+    	    else {	
+            	success = TRUE;
+        	    // everthing worked, flush all changes back to disk
+                // printf("everthing worked, flush all changes back to disk\n");
+                hdr->set_ctime();
+                hdr->set_last_vtime();
+                hdr->set_last_mtime();
+    	    	hdr->WriteBack(sector); 		
+    	    	directory->WriteBack(directoryFile);
+                // printf("directory WriteBack\n");
+    	    	freeMap->WriteBack(freeMapFile);
+                // printf("freeMap WriteBack\n");
 	    }
             delete hdr;
 	}
@@ -260,6 +266,7 @@ FileSystem::Open(char *name)
 bool
 FileSystem::Remove(char *name)
 { 
+    printf("in remove...\n");
     Directory *directory;
     BitMap *freeMap;
     FileHeader *fileHdr;
@@ -268,6 +275,7 @@ FileSystem::Remove(char *name)
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name);
+    printf("Sector=%d\n", sector);
     if (sector == -1) {
        delete directory;
        return FALSE;			 // file not found 
@@ -278,8 +286,11 @@ FileSystem::Remove(char *name)
     freeMap = new BitMap(NumSectors);
     freeMap->FetchFrom(freeMapFile);
 
+    printf("in filehdr Deallocate...\n");
     fileHdr->Deallocate(freeMap);  		// remove data blocks
+    printf("in freeMap Clear...\n");
     freeMap->Clear(sector);			// remove header block
+    printf("in Directory remove...\n");
     directory->Remove(name);
 
     freeMap->WriteBack(freeMapFile);		// flush to disk
