@@ -69,11 +69,13 @@ class Directory {
 
     bool Remove(char *name);		// Remove a file from the directory
 
+    void RecurList(int sector);
     void List();			// Print the names of all the files
 					//  in the directory
     void Print();			// Verbose print of the contents
 					//  of the directory -- all the file
 					//  names and their contents.
+    int GetDirSector(char *path);
 
   private:
     int tableSize;			// Number of directory entries

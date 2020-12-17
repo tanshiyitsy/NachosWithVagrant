@@ -115,7 +115,7 @@ PrintSector (bool writing, int sector, char *data)
 void
 Disk::ReadRequest(int sectorNumber, char* data)
 {
-    printf("send a ReadRequest\n");
+    // printf("send a ReadRequest\n");
     int ticks = ComputeLatency(sectorNumber, FALSE);
 
     ASSERT(!active);				// only one request at a time

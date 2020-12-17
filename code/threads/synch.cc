@@ -67,7 +67,7 @@ Semaphore::P()
     IntStatus oldLevel = interrupt->SetLevel(IntOff);	// disable interrupts
     
     while (value == 0) { 			// semaphore not available
-        printf("thread:%s not get semaphore,will block\n", currentThread->getName());
+        // printf("thread:%s not get semaphore,will block\n", currentThread->getName());
     	queue->Append((void *)currentThread);	// so go to sleep
     	currentThread->Sleep();
     } 
@@ -95,7 +95,7 @@ Semaphore::V()
     if (thread != NULL)	   // make thread ready, consuming the V immediately
     {
         scheduler->ReadyToRun(thread);
-        printf("thread:%s wake up from semaphore\n", currentThread->getName());
+        // printf("thread:%s wake up from semaphore\n", currentThread->getName());
     }
     value++;
     (void) interrupt->SetLevel(oldLevel);
@@ -126,12 +126,12 @@ void Lock::Acquire() {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
     while(status == BUSY){
         // 1.1 没有获取到，阻塞在这里
-        printf("thread:%s not Acquire the lock:%s,will block\n", currentThread->getName(),name);
+        // printf("thread:%s not Acquire the lock:%s,will block\n", currentThread->getName(),name);
         queue->Append((void *)currentThread);
         currentThread->Sleep();
     }
     // 1.2 获取到了，修改状态
-    printf("thread:%s  Acquire the lock:%s\n", currentThread->getName(),name);
+    // printf("thread:%s  Acquire the lock:%s\n", currentThread->getName(),name);
     status = BUSY;
     pid = currentThread->getPid();
     (void) interrupt->SetLevel(oldLevel);   // re-enable interrupts
@@ -142,14 +142,14 @@ void Lock::Release() {
     // mutex->P();
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
     while((pid == currentThread->getPid()) && (status == BUSY)){
-        printf("thread:%s Release lock:%s\n", currentThread->getName(),name);
+        // printf("thread:%s Release lock:%s\n", currentThread->getName(),name);
         status = FREE;
         pid = -1;
          // 唤醒一个线程
         Thread *thread;
         thread = (Thread *)queue->Remove();
         if (thread != NULL) {   // make thread ready, consuming the V immediately
-            printf("thread :%s is wakeup in lock:%s\n", thread->getName(),name);
+            // printf("thread :%s is wakeup in lock:%s\n", thread->getName(),name);
             scheduler->ReadyToRun(thread);
         }
     }

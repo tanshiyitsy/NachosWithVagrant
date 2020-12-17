@@ -113,12 +113,10 @@ BitMap::Find()
 int 
 BitMap::NumClear() 
 {
-    printf(" in NumClear...\n");
     int count = 0;
 
     for (int i = 0; i < numBits; i++)
 	if (!Test(i)) count++;
-    printf("count is %d\n", count);
     return count;
 }
 

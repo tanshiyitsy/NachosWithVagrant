@@ -168,8 +168,10 @@ FileRead()
     delete [] buffer;
     delete openFile;	// close file
 }
+// #define DIRECTORY 0
+// #define NORFILE 1
 void testExercise2(char *filename){
-    if (!fileSystem->Create(filename, 0)) {
+    if (!fileSystem->Create(filename, 0,1,"/")) {
       printf("Perf test: can't create %s\n", filename);
       return;
     }
@@ -179,7 +181,7 @@ void testExercise2(char *filename){
 
 }
 void testExercise3(char *filename){
-    if (!fileSystem->Create(filename, 5400)) {
+    if (!fileSystem->Create(filename, 5400,1,"/")) {
       printf("Perf test: can't create %s\n", filename);
       return;
     }
@@ -188,14 +190,26 @@ void testExercise3(char *filename){
     }
 
 }
+void testExercise4(){
+    fileSystem->Create("dir1",10,0,"/");
+    fileSystem->Create("dir2",10,0,"/dir1/");
+    fileSystem->Create("dir3",10,0,"/");
+    fileSystem->Create("file1",5400,1,"/dir1/dir2/");
+    printf("-----------------------------------------list file-----------------------------\n");
+    fileSystem->List();
+    fileSystem->Remove("file1","/dir1/dir2");
+    fileSystem->Remove("dir2","/dir1/");
+    fileSystem->Remove("dir1","/");
+    fileSystem->Remove("dir3","/");
+}
 void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
     // testExercise3("testfile_this_is_a_very_long_filename_test1");
-    testExercise3("testfile");
-    printf("-----------------------------------------list file-----------------------------\n");
-    fileSystem->Print();
+    testExercise4();
+    // printf("-----------------------------------------list file-----------------------------\n");
+    // fileSystem->List();
     // stats->Print();
     // FileWrite();
     // FileRead();

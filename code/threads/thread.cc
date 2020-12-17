@@ -241,12 +241,12 @@ Thread::Yield ()
     
     nextThread = scheduler->FindNextToRun();
     if (nextThread != NULL) {
-        printf("nextThread = %s\n", nextThread->getName());
+        DEBUG('t', "nextThread = %s\n", nextThread->getName());
     	scheduler->ReadyToRun(this);
     	scheduler->Run(nextThread);
     }
     else{
-        printf("nextThread is NULL\n");
+        DEBUG('t', "nextThread is NULL\n");
     }
     (void) interrupt->SetLevel(oldLevel);
 }

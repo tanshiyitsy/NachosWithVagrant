@@ -117,7 +117,7 @@ int
 OpenFile::ReadAt(char *into, int numBytes, int position)
 {
     int fileLength = hdr->FileLength();
-    printf("fileLength = %d\n", fileLength);
+    // printf("fileLength = %d\n", fileLength);
     int i, firstSector, lastSector, numSectors;
     char *buf;
 

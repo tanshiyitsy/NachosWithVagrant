@@ -53,7 +53,7 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
     if(numSectors < 6){
         for(int i=0;i < numSectors;i++){
             dataSectors[i] = freeMap->Find();
-            printf("i=%d sector=%d\n", i,dataSectors[i]);
+            // printf("i=%d sector=%d\n", i,dataSectors[i]);
         }
         return TRUE;
     }
@@ -62,16 +62,16 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
         int i=0;
         for(i=0;i<6;i++){
             dataSectors[i] = freeMap->Find();
-            printf("i=%d sector=%d\n", i,dataSectors[i]);
+            // printf("i=%d sector=%d\n", i,dataSectors[i]);
         }
         int cnt = 6;
         while(i < numSectors){
             dataSectors[cnt] = freeMap->Find();
-            printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
+            // printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
             int indirect[32];
             for(int j=0;j<32 && i < numSectors;j++,i++){
                 indirect[j] = freeMap->Find();
-                printf("i=%d j=%d sector=%d\n", i,j,indirect[j]);
+                // printf("i=%d j=%d sector=%d\n", i,j,indirect[j]);
             }
             synchDisk->WriteSector(dataSectors[cnt],(char *)indirect);
             cnt++;
@@ -93,7 +93,7 @@ FileHeader::Deallocate(BitMap *freeMap)
     printf("in Deallocate...\n");
     if(numSectors < 6){
         for(int i=0;i < numSectors;i++){
-            printf("i=%d sector=%d\n", i,dataSectors[i]);
+            // printf("i=%d sector=%d\n", i,dataSectors[i]);
             ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
             freeMap->Clear((int) dataSectors[i]);
         }
@@ -101,7 +101,7 @@ FileHeader::Deallocate(BitMap *freeMap)
     else{
         int i = 0;
         for(i=0;i<6;i++){
-            printf("i=%d sector=%d\n", i,dataSectors[i]);
+            // printf("i=%d sector=%d\n", i,dataSectors[i]);
             ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
             freeMap->Clear((int) dataSectors[i]);
         }
@@ -109,9 +109,9 @@ FileHeader::Deallocate(BitMap *freeMap)
         while(i < numSectors){
             char *indirect = new char[SectorSize];
             synchDisk->ReadSector(dataSectors[cnt],indirect);
-            printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
+            // printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
             for(int j=0;j<32 && i < numSectors;j++,i++){
-                printf("i=%d j=%d sector=%d\n", i,j,indirect[j*4]);
+                // printf("i=%d j=%d sector=%d\n", i,j,indirect[j*4]);
                 ASSERT(freeMap->Test((int) indirect[j * 4]));  // ought to be marked!
                 freeMap->Clear((int) indirect[j * 4]);
             }
@@ -179,7 +179,7 @@ FileHeader::ByteToSector(int offset)
         else{
             indirect_index = sector_nums-6-(indirect_index-1)*32;
         }
-        printf("ByteTosector:offset=%d indirect_index = %d indirect_offset = %d\n", offset,indirect_index,indirect_offset);
+        // printf("ByteTosector:offset=%d indirect_index = %d indirect_offset = %d\n", offset,indirect_index,indirect_offset);
         return (int)indirect[indirect_offset * 4];
     }
 }
