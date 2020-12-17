@@ -178,13 +178,21 @@ void testExercise2(char *filename){
     }
 
 }
+void testExercise3(char *filename){
+    if (!fileSystem->Create(filename, 5400)) {
+      printf("Perf test: can't create %s\n", filename);
+      return;
+    }
+    else{
+        printf("successfully create file:%s\n",filename);
+    }
+
+}
 void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
-    testExercise2("testfile1");
-    testExercise2("testfile2");
-    testExercise2("testfile3");
+    testExercise3("testfile_this_is_a_very_long_filename_test1");
     printf("-----------------------------------------list file-----------------------------\n");
     fileSystem->Print();
     // stats->Print();

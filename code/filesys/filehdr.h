@@ -19,7 +19,7 @@
 #define DIRECTORY 0
 #define NORFILE 1
 
-#define NumDirect 	((SectorSize - 2 * sizeof(int)) / sizeof(int))
+#define NumDirect 	((SectorSize - 2 * sizeof(int) - 3 * 25) / sizeof(int))
 #define MaxFileSize 	(NumDirect * SectorSize)
 
 // The following class defines the Nachos "file header" (in UNIX terms,  

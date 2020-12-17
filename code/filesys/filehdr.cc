@@ -43,14 +43,41 @@
 bool
 FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
+    // NumDirect is 11
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
     if (freeMap->NumClear() < numSectors)
 	return FALSE;		// not enough space
 
-    for (int i = 0; i < numSectors; i++)
-	dataSectors[i] = freeMap->Find();
-    return TRUE;
+    printf("fileSize is %d numSectors is %d\n", fileSize,numSectors);
+    if(numSectors < 6){
+        for(int i=0;i < numSectors;i++){
+            dataSectors[i] = freeMap->Find();
+            printf("i=%d sector=%d\n", i,dataSectors[i]);
+        }
+        return TRUE;
+    }
+    else{
+        // i记录当前已经分配的数据物理块，cnt记录当前占用的直接索引表项
+        int i=0;
+        for(i=0;i<6;i++){
+            dataSectors[i] = freeMap->Find();
+            printf("i=%d sector=%d\n", i,dataSectors[i]);
+        }
+        int cnt = 6;
+        while(i < numSectors){
+            dataSectors[cnt] = freeMap->Find();
+            printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
+            int indirect[32];
+            for(int j=0;j<32 && i < numSectors;j++,i++){
+                indirect[j] = freeMap->Find();
+                printf("i=%d j=%d sector=%d\n", i,j,indirect[j]);
+            }
+            synchDisk->WriteSector(dataSectors[cnt],(char *)indirect);
+            cnt++;
+        }
+        return TRUE;
+    }
 }
 
 //----------------------------------------------------------------------
@@ -63,9 +90,34 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
 void 
 FileHeader::Deallocate(BitMap *freeMap)
 {
-    for (int i = 0; i < numSectors; i++) {
-	ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
-	freeMap->Clear((int) dataSectors[i]);
+    printf("in Deallocate...\n");
+    if(numSectors < 6){
+        for(int i=0;i < numSectors;i++){
+            printf("i=%d sector=%d\n", i,dataSectors[i]);
+            ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
+            freeMap->Clear((int) dataSectors[i]);
+        }
+    }
+    else{
+        int i = 0;
+        for(i=0;i<6;i++){
+            printf("i=%d sector=%d\n", i,dataSectors[i]);
+            ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
+            freeMap->Clear((int) dataSectors[i]);
+        }
+        int cnt = 6;
+        while(i < numSectors){
+            char *indirect = new char[SectorSize];
+            synchDisk->ReadSector(dataSectors[cnt],indirect);
+            printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
+            for(int j=0;j<32 && i < numSectors;j++,i++){
+                printf("i=%d j=%d sector=%d\n", i,j,indirect[j*4]);
+                ASSERT(freeMap->Test((int) indirect[j * 4]));  // ought to be marked!
+                freeMap->Clear((int) indirect[j * 4]);
+            }
+            cnt++;
+        }
+
     }
 }
 
@@ -108,7 +160,28 @@ FileHeader::WriteBack(int sector)
 int
 FileHeader::ByteToSector(int offset)
 {
-    return(dataSectors[offset / SectorSize]);
+    if(offset < 6 * SectorSize){
+        return(dataSectors[offset / SectorSize]);
+    }
+    else{
+        // 所在物理块数
+        int sector_nums = offset/SectorSize;
+        // 所在一级索引表项
+        int indirect_index = (sector_nums - 6)/32;
+        char *indirect = new char[SectorSize];
+        // 把其所在的一级索引表读出来
+        synchDisk->ReadSector(dataSectors[indirect_index+6],indirect);
+        // 找到其在一级索引表的位置
+        int indirect_offset=0;
+        if(indirect_index==0){
+            indirect_index = sector_nums-6;
+        }
+        else{
+            indirect_index = sector_nums-6-(indirect_index-1)*32;
+        }
+        printf("ByteTosector:offset=%d indirect_index = %d indirect_offset = %d\n", offset,indirect_index,indirect_offset);
+        return (int)indirect[indirect_offset * 4];
+    }
 }
 
 //----------------------------------------------------------------------
@@ -135,19 +208,64 @@ FileHeader::Print()
     char *data = new char[SectorSize];
 
     printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
-    for (i = 0; i < numSectors; i++)
-	printf("%d ", dataSectors[i]);
-    printf("\nFile contents:\n");
-    for (i = k = 0; i < numSectors; i++) {
-	synchDisk->ReadSector(dataSectors[i], data);
-        for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
-	    if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
-		printf("%c", data[j]);
-            else
-		printf("\\%x", (unsigned char)data[j]);
-	}
-        printf("\n"); 
+    if(numSectors < 6){
+        for (i = k = 0; i < numSectors; i++) {
+            printf("i=%d sector=%d\n", i,dataSectors[i]);
+            synchDisk->ReadSector(dataSectors[i], data);
+            for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
+                if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
+                    printf("%c", data[j]);
+                else
+                    printf("\\%x", (unsigned char)data[j]);
+        }
+        }
     }
+    else{
+        // 先输出直接索引的内容
+        for(i=k=0;i<6;i++){
+            printf("i=%d sector=%d\n", i,dataSectors[i]);
+            synchDisk->ReadSector(dataSectors[i],data);
+            for(j=0;(j < SectorSize) && (k < numBytes);j++,k++){
+                if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
+                printf("%c", data[j]);
+            else
+                printf("\\%x", (unsigned char)data[j]);
+            }
+        }
+        printf("use indirect index\n");
+        // 找到二级索引表
+        int cnt = 6;
+        while(i < numSectors){
+            printf("indirect_cnt=%d indirect_index=%d\n", cnt,dataSectors[cnt]);
+            char *indirect = new char[SectorSize];
+            synchDisk->ReadSector(dataSectors[cnt],indirect);
+            for(int indirect_num=0;indirect_num<32 && i <numSectors;indirect_num++,i++){
+                printf("i=%d indirect_num=%d sector=%d\n",i,indirect_num,indirect[indirect_num*4]);
+                synchDisk->ReadSector((int)indirect[indirect_num*4],data);
+                for(j=0;(j < SectorSize) && (k < numBytes);j++,k++){
+                    if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
+                        printf("%c", data[j]);
+                    else
+                        printf("\\%x", (unsigned char)data[j]);
+                }
+            }
+            cnt++;
+        }
+    }
+    printf("\n"); 
+ //    for (i = 0; i < numSectors; i++)
+	// printf("%d ", dataSectors[i]);
+ //    printf("\nFile contents:\n");
+ //    for (i = k = 0; i < numSectors; i++) {
+	// synchDisk->ReadSector(dataSectors[i], data);
+ //        for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
+	//     if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
+	// 	printf("%c", data[j]);
+ //            else
+	// 	printf("\\%x", (unsigned char)data[j]);
+	// }
+ //        printf("\n"); 
+ //    }
     delete [] data;
 }
 void FileHeader::set_ctime(){
@@ -155,19 +273,19 @@ void FileHeader::set_ctime(){
     time(&timep);
     strncpy(ctime,asctime(gmtime(&timep)),25);
     ctime[24] = '\0';
-    printf("ctime is %s\n", ctime);
+    // printf("ctime is %s\n", ctime);
 }
 void FileHeader::set_last_vtime(){
     time_t timep;
     time(&timep);
     strncpy(last_vtime,asctime(gmtime(&timep)),25);
     last_vtime[24] = '\0';
-    printf("last_vtime is %s\n", last_vtime);
+    // printf("last_vtime is %s\n", last_vtime);
 }
 void FileHeader::set_last_mtime(){
     time_t timep;
     time(&timep);
     strncpy(last_mtime,asctime(gmtime(&timep)),25);
     last_mtime[24]='\0';
-    printf("last_mtime is %s\n", last_mtime);
+    // printf("last_mtime is %s\n", last_mtime);
 }
