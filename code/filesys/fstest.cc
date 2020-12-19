@@ -202,12 +202,43 @@ void testExercise4(){
     fileSystem->Remove("dir1","/");
     fileSystem->Remove("dir3","/");
 }
+void testExercise5(){
+    char *name = "file1";
+    char *path = "/";
+    fileSystem->Create("file1",256,1,"/");
+    OpenFile *openFile = fileSystem->Open(name,path);
+    openFile->ExtendFile(256);
+    openFile->ExtendFile(1250);
+    openFile->ExtendFile(5400);
+    // fileSystem->ExtendFile("file1","/",256);
+    // fileSystem->ExtendFile("file1","/",1250);
+    // fileSystem->ExtendFile("file1","/",5400);
+    printf("-----------------------------------------list file-----------------------------\n");
+    fileSystem->List();
+    fileSystem->Remove("file1","/");
+}
+void testExercise6(){
+    char *name = "file1";
+    char *path = "/";
+    char *from = "hello world";
+    fileSystem->Create("file1",256,1,"/");
+    OpenFile *openFile = fileSystem->Open(name,path);
+    for(int i = 0;i < 128;i++){
+        // printf("i=%d\n", i);
+        openFile->Write(from, 11);
+    }
+    printf("-----------------------------------------list file-----------------------------\n");
+    fileSystem->Print();
+    fileSystem->Remove("file1","/");
+}
 void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
     // testExercise3("testfile_this_is_a_very_long_filename_test1");
-    testExercise4();
+    // testExercise4();
+    testExercise6();
+
     // printf("-----------------------------------------list file-----------------------------\n");
     // fileSystem->List();
     // stats->Print();

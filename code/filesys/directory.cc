@@ -203,20 +203,6 @@ Directory::RecurList(int sector){
     Directory *directory = new Directory(NumDirEntries);
     directory->FetchFrom(dir_file);
     directory->List();
-   //  FileHeader *hdr = new FileHeader;
-   //  for (int i = 0; i < tableSize; i++){
-   //  if (table[i].inUse){
-   //      hdr->FetchFrom(table[i].sector);
-   //      printf("%s\t%d\t%d\t%s\t%s\t%s\t%s\n", table[i].name,table[i].sector,table[i].type,table[i].path,
-   //          hdr->get_ctime(),hdr->get_last_vtime(),hdr->get_last_mtime());
-   //      if(table[i].type == 0){
-   //          // 目录文件
-   //          RecurList(table[i].sector);
-   //      }
-   //  }
-   //  // printf("\n");
-   // }
-   // delete hdr;
 }
 void
 Directory::List()
@@ -240,7 +226,14 @@ Directory::List()
 // 	List all the file names in the directory, their FileHeader locations,
 //	and the contents of each file.  For debugging.
 //----------------------------------------------------------------------
-
+void
+Directory::RecurPrint(int sector){
+    // 1. 读取目录文件
+    OpenFile *dir_file = new OpenFile(sector);
+    Directory *directory = new Directory(NumDirEntries);
+    directory->FetchFrom(dir_file);
+    directory->Print();
+}
 void
 Directory::Print()
 { 
@@ -254,7 +247,13 @@ Directory::Print()
 	    hdr->FetchFrom(table[i].sector);
         printf("%s\t%d\t%d\t%s\t%s\t%s\t%s\t\n", table[i].name,table[i].sector,table[i].type,table[i].path,
             hdr->get_ctime(),hdr->get_last_vtime(),hdr->get_last_mtime());
-	    hdr->Print();
+        if(table[i].type == 0){
+            RecurPrint(table[i].sector);
+        }
+        else{
+            hdr->Print();
+        }
+	    
 	}
     printf("\n");
     delete hdr;

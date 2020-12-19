@@ -224,17 +224,7 @@ FileSystem::Create(char *name, int initialSize)
 bool
 FileSystem::Create(char *name, int initialSize,int type,char *path)
 {
-     /*Directory *directory = new Directory(NumDirEntries);
-     OpenFile *dir_file = new OpenFile(17);
-
-    directory->FetchFrom(dir_file);
-    if(directory->Find("dir2") != -1){
-        printf("exist\n");
-    }
-    delete directory;
-    return TRUE;*/
-    // printf("in new FileSystem created....\n");
-    printf("begin to create file or dir:%s path:%s\n", name,path);
+    printf("begin to create file or dir:%s path:%s initialSize=%d\n", name,path,initialSize);
 
     Directory *directory;
     BitMap *freeMap;
@@ -246,7 +236,7 @@ FileSystem::Create(char *name, int initialSize,int type,char *path)
 
     directory = new Directory(NumDirEntries);
     dir_sector = directory->GetDirSector(path);
-    printf("dir_file Sectors is %d\n", dir_sector);
+    // printf("dir_file Sectors is %d\n", dir_sector);
     OpenFile *dir_file = new OpenFile(dir_sector);
     // directory = new Directory(NumDirEntries);
     directory->FetchFrom(dir_file);
@@ -259,7 +249,7 @@ FileSystem::Create(char *name, int initialSize,int type,char *path)
         freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
         sector = freeMap->Find();	// find a sector to hold the file header
-        printf("this file header Sector is %d\n", sector);
+        // printf("this file header Sector is %d\n", sector);
     	if (sector == -1) 		
             success = FALSE;		// no free block for file header 
         else if (!directory->Add(name, sector,type,path))
@@ -342,13 +332,15 @@ FileSystem::Open(char *name,char *path)
     OpenFile *dir_file = new OpenFile(sector);
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(dir_file);
-    printf("dir_file Sectors is %d\n", sector);
+    // printf("dir_file Sectors is %d\n", sector);
 
     DEBUG('f', "Opening file %s\n", name);
     sector = directory->Find(name); 
     OpenFile *openFile = NULL;
     if (sector >= 0) 		
 	   openFile = new OpenFile(sector);	// name was found in directory 
+    openFile->hdr_sector = sector;
+    // printf("find the hdr_sector=%d\n", sector);
     delete directory;
     return openFile;				// return NULL if not found
 }
@@ -472,16 +464,16 @@ FileSystem::Print()
     BitMap *freeMap = new BitMap(NumSectors);
     Directory *directory = new Directory(NumDirEntries);
 
-    printf("Bit map file header:\n");
-    bitHdr->FetchFrom(FreeMapSector);
-    bitHdr->Print();
+    // printf("Bit map file header:\n");
+    // bitHdr->FetchFrom(FreeMapSector);
+    // bitHdr->Print();
 
-    printf("Directory file header:\n");
-    dirHdr->FetchFrom(DirectorySector);
-    dirHdr->Print();
+    // printf("Directory file header:\n");
+    // dirHdr->FetchFrom(DirectorySector);
+    // dirHdr->Print();
 
-    freeMap->FetchFrom(freeMapFile);
-    freeMap->Print();
+    // freeMap->FetchFrom(freeMapFile);
+    // freeMap->Print();
 
     directory->FetchFrom(directoryFile);
     directory->Print();

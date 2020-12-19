@@ -72,6 +72,7 @@ class Directory {
     void RecurList(int sector);
     void List();			// Print the names of all the files
 					//  in the directory
+    void RecurPrint(int sector);
     void Print();			// Verbose print of the contents
 					//  of the directory -- all the file
 					//  names and their contents.

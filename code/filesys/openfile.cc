@@ -152,10 +152,22 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     bool firstAligned, lastAligned;
     char *buf;
 
-    if ((numBytes <= 0) || (position >= fileLength))
+
+    // printf("position=%d numBytes=%d FileLength=%d hdr_sector=%d\n", position,numBytes,fileLength,hdr_sector);
+
+    if ((numBytes <= 0))
 	return 0;				// check request
-    if ((position + numBytes) > fileLength)
-	numBytes = fileLength - position;
+    
+
+    if ((position + numBytes) > fileLength){
+        // numBytes = fileLength - position;
+        printf("position=%d numBytes=%d FileLength=%d \n", position,numBytes,fileLength);
+        if(ExtendFile(position+numBytes-fileLength)==FALSE){
+            return 0;
+        }
+        fileLength = hdr->FileLength();
+        // printf("continue position=%d numBytes=%d FileLength=%d hdr_sector=%d\n",position,numBytes,fileLength,hdr_sector);
+    }
     DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
 			numBytes, position, fileLength);
 
@@ -191,8 +203,23 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
 // 	Return the number of bytes in the file.
 //----------------------------------------------------------------------
 
-int
-OpenFile::Length() 
+int OpenFile::Length() 
 { 
     return hdr->FileLength(); 
+}
+
+bool OpenFile::ExtendFile(int fileSize){
+    OpenFile* freeMapFile = new OpenFile(0);
+    BitMap *freeMap = new BitMap(NumSectors);
+    freeMap->FetchFrom(freeMapFile);
+    int ans = hdr->ExtendAllocate(freeMap,fileSize);
+    if(ans == TRUE){
+        freeMap->WriteBack(freeMapFile);
+        hdr->WriteBack(hdr_sector); 
+        // printf("successfully allocate ExtendFile...\n");
+    }
+    else{
+        printf("fail to allocate ExtendFile...\n");
+    }
+    return ans;
 }

@@ -43,6 +43,7 @@
 bool
 FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
+    printf("in origin Allocate...\n");
     // NumDirect is 11
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
@@ -53,7 +54,7 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
     if(numSectors < 6){
         for(int i=0;i < numSectors;i++){
             dataSectors[i] = freeMap->Find();
-            // printf("i=%d sector=%d\n", i,dataSectors[i]);
+            printf("direct Allocate i=%d sector=%d\n", i,dataSectors[i]);
         }
         return TRUE;
     }
@@ -62,16 +63,16 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
         int i=0;
         for(i=0;i<6;i++){
             dataSectors[i] = freeMap->Find();
-            // printf("i=%d sector=%d\n", i,dataSectors[i]);
+            printf("direct Allocate i=%d sector=%d\n", i,dataSectors[i]);
         }
         int cnt = 6;
         while(i < numSectors){
             dataSectors[cnt] = freeMap->Find();
-            // printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
+            printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
             int indirect[32];
             for(int j=0;j<32 && i < numSectors;j++,i++){
                 indirect[j] = freeMap->Find();
-                // printf("i=%d j=%d sector=%d\n", i,j,indirect[j]);
+                // printf("\ti=%d j=%d sector=%d\n", i,j,indirect[j]);
             }
             synchDisk->WriteSector(dataSectors[cnt],(char *)indirect);
             cnt++;
@@ -79,7 +80,67 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
         return TRUE;
     }
 }
-
+bool FileHeader::ExtendAllocate(BitMap *freeMap, int fileSize){
+    // int needSector = divRoundUp(fileSize,SectorSize);
+    // printf("in ExtendAllocate...\n");
+    int oldByte = FileLength();
+    int oldSectors = numSectors;
+    numBytes += fileSize;
+    numSectors = divRoundUp(numBytes,SectorSize);
+    numBytes = numSectors * SectorSize;
+    printf("oldByte=%d oldSectors=%d numBytes=%d numSectors=%d\n", oldByte,oldSectors,numBytes,numSectors);
+    if(numSectors == oldSectors){
+        return TRUE;
+    }
+    if(freeMap->NumClear() < (numSectors - oldSectors)){
+        return FALSE;
+    }
+    if(numSectors < 6){
+        for(int i= oldSectors;i < numSectors;i++){
+            dataSectors[i] = freeMap->Find();
+            printf("direct Allocate i=%d sector=%d\n", i,dataSectors[i]);
+        }
+    }
+    else{
+        // 先找到oldSectors
+        if(oldSectors < 6){
+            for(int i = oldSectors;i<6;i++,oldSectors++){
+                dataSectors[i] = freeMap->Find();
+                printf("direct Allocate i=%d sector=%d\n", i,dataSectors[i]);
+            }
+        }
+        int cnt = 6,j=0,i=0;
+        if(oldSectors > 6){
+            cnt = (oldSectors - 6)/32 + 6;
+            j = (oldSectors - 6) % 32;
+            i = oldSectors;
+            char *indirect = new char[SectorSize];
+            synchDisk->ReadSector(dataSectors[cnt],indirect);
+            printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
+            while(j<32 && i < numSectors){
+                indirect[j*4] = freeMap->Find();
+                // printf("\ti=%d j=%d sector=%d\n", i,j,(int)indirect[j*4]);
+                j++;
+                i++;
+            }
+            synchDisk->WriteSector(dataSectors[cnt],indirect);
+            cnt++;
+        }
+        while(i < numSectors){
+            dataSectors[cnt] = freeMap->Find();
+            printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
+            int indirect[32];
+            for(j=0;j<32 && i < numSectors;j++,i++){
+                indirect[j] = freeMap->Find();
+                // printf("\ti=%d j=%d sector=%d\n", i,j,indirect[j]);
+            }
+            synchDisk->WriteSector(dataSectors[cnt],(char *)indirect);
+            cnt++;
+        }
+        
+    }
+    return TRUE;
+}
 //----------------------------------------------------------------------
 // FileHeader::Deallocate
 // 	De-allocate all the space allocated for data blocks for this file.
@@ -93,7 +154,7 @@ FileHeader::Deallocate(BitMap *freeMap)
     printf("in Deallocate...\n");
     if(numSectors < 6){
         for(int i=0;i < numSectors;i++){
-            // printf("i=%d sector=%d\n", i,dataSectors[i]);
+            printf("i=%d sector=%d\n", i,dataSectors[i]);
             ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
             freeMap->Clear((int) dataSectors[i]);
         }
@@ -101,7 +162,7 @@ FileHeader::Deallocate(BitMap *freeMap)
     else{
         int i = 0;
         for(i=0;i<6;i++){
-            // printf("i=%d sector=%d\n", i,dataSectors[i]);
+            printf("i=%d sector=%d\n", i,dataSectors[i]);
             ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
             freeMap->Clear((int) dataSectors[i]);
         }
@@ -109,9 +170,9 @@ FileHeader::Deallocate(BitMap *freeMap)
         while(i < numSectors){
             char *indirect = new char[SectorSize];
             synchDisk->ReadSector(dataSectors[cnt],indirect);
-            // printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
+            printf("indirect_index=%d indirect_sector=%d\n", cnt,dataSectors[cnt]);
             for(int j=0;j<32 && i < numSectors;j++,i++){
-                // printf("i=%d j=%d sector=%d\n", i,j,indirect[j*4]);
+                // printf("\ti=%d j=%d sector=%d\n", i,j,indirect[j*4]);
                 ASSERT(freeMap->Test((int) indirect[j * 4]));  // ought to be marked!
                 freeMap->Clear((int) indirect[j * 4]);
             }
@@ -253,19 +314,6 @@ FileHeader::Print()
         }
     }
     printf("\n"); 
- //    for (i = 0; i < numSectors; i++)
-	// printf("%d ", dataSectors[i]);
- //    printf("\nFile contents:\n");
- //    for (i = k = 0; i < numSectors; i++) {
-	// synchDisk->ReadSector(dataSectors[i], data);
- //        for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
-	//     if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
-	// 	printf("%c", data[j]);
- //            else
-	// 	printf("\\%x", (unsigned char)data[j]);
-	// }
- //        printf("\n"); 
- //    }
     delete [] data;
 }
 void FileHeader::set_ctime(){
