@@ -138,7 +138,6 @@ Console::GetChar()
 // 	Write a character to the simulated display, schedule an interrupt 
 //	to occur in the future, and return.
 //----------------------------------------------------------------------
-
 void
 Console::PutChar(char ch)
 {
@@ -147,4 +146,28 @@ Console::PutChar(char ch)
     putBusy = TRUE;
     interrupt->Schedule(ConsoleWriteDone, (int)this, ConsoleTime,
 					ConsoleWriteInt);
+}
+
+static Semaphore *readAvail = new Semaphore("read avail", 0);
+static Semaphore *writeDone = new Semaphore("write done", 0);
+static void ReadAvail(int arg) { readAvail->V(); }
+static void WriteDone(int arg) { writeDone->V(); }
+
+SynchConsole::SynchConsole(char *readFile,char *writeFile){
+    lock = new Lock("console");
+    console = new Console(readFile,writeFile,ReadAvail,WriteDone,0);
+}
+char SynchConsole::GetChar(){
+    char ch;
+    lock->Acquire();
+    readAvail->P();
+    ch = console->GetChar();
+    lock->Release();
+    return ch;
+}
+void SynchConsole::PutChar(char ch){
+    lock->Acquire();
+    console->PutChar(ch);
+    writeDone->P();
+    lock->Release();
 }
