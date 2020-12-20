@@ -32,6 +32,8 @@ OpenFile::OpenFile(int sector)
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
     seekPosition = 0;
+    hdr_sector=sector;
+    synchDisk->AddVisitors(hdr_sector);
 }
 
 //----------------------------------------------------------------------
@@ -41,6 +43,7 @@ OpenFile::OpenFile(int sector)
 
 OpenFile::~OpenFile()
 {
+    synchDisk->MinusVisitors(hdr_sector);
     delete hdr;
 }
 
@@ -74,16 +77,27 @@ OpenFile::Seek(int position)
 int
 OpenFile::Read(char *into, int numBytes)
 {
+   synchDisk->PlusReader(hdr_sector);
+   printf("thread:%s begin reading\n", currentThread->getName());
    int result = ReadAt(into, numBytes, seekPosition);
+   printf("thread:%s end reading\n", currentThread->getName());
+   // currentThread->Yield();// 这句是为了测试多个线程互斥同步访问磁盘
    seekPosition += result;
+   synchDisk->MinusReader(hdr_sector);
    return result;
 }
 
 int
 OpenFile::Write(char *into, int numBytes)
 {
+    printf("in write...\n");
+   synchDisk->BeginWrite(hdr_sector);
+   printf("thread:%s begin to write\n", currentThread->getName());
    int result = WriteAt(into, numBytes, seekPosition);
+   // currentThread->Yield();// 这句是为了测试多个线程互斥同步访问磁盘
    seekPosition += result;
+   printf("thread:%s end to write\n", currentThread->getName());
+   synchDisk->EndWrite(hdr_sector);
    return result;
 }
 
@@ -161,8 +175,8 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
 
     if ((position + numBytes) > fileLength){
         // numBytes = fileLength - position;
-        printf("position=%d numBytes=%d FileLength=%d \n", position,numBytes,fileLength);
-        if(ExtendFile(position+numBytes-fileLength)==FALSE){
+        // printf("position=%d numBytes=%d FileLength=%d \n", position,numBytes,fileLength);
+        if(ExtendFile(position+numBytes-fileLength+1)==FALSE){
             return 0;
         }
         fileLength = hdr->FileLength();

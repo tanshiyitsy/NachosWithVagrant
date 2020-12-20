@@ -71,6 +71,7 @@ Thread::Thread(char* threadName)
     stack = NULL;
     status = JUST_CREATED;
 
+    // printf("new thread:%s\n", threadName);
     tricks = 0;
     base_priority = 100;
     // uid = getuid();  // 获取Linux当前的登录用户作为UID
@@ -241,12 +242,13 @@ Thread::Yield ()
     
     nextThread = scheduler->FindNextToRun();
     if (nextThread != NULL) {
+        printf("yield nextThread = %s\n", nextThread->getName());
         DEBUG('t', "nextThread = %s\n", nextThread->getName());
     	scheduler->ReadyToRun(this);
     	scheduler->Run(nextThread);
     }
     else{
-        DEBUG('t', "nextThread is NULL\n");
+        // printf("yield nextThread = NULL\n");
     }
     (void) interrupt->SetLevel(oldLevel);
 }
@@ -287,8 +289,7 @@ Thread::Sleep ()
     {
         interrupt->Idle();  // no one to run, wait for an interrupt
     }
-	
-        
+	printf("block thread:%s nextThread:%s\n",currentThread->getName(),nextThread->getName());
     scheduler->Run(nextThread); // returns when we've been signalled
 }
 

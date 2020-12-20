@@ -43,7 +43,7 @@
 bool
 FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
-    printf("in origin Allocate...\n");
+    // printf("in origin Allocate...\n");
     // NumDirect is 11
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);

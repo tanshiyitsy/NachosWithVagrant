@@ -112,10 +112,12 @@ Print(char *name)
 #define Contents 	"1234567890"
 #define ContentSize 	strlen(Contents)
 #define FileSize 	((int)(ContentSize * 5000))
+#define MAXN 100
 
 static void 
 FileWrite()
 {
+    printf("now in FileWrite...\n");
     OpenFile *openFile;    
     int i, numBytes;
 
@@ -144,6 +146,7 @@ FileWrite()
 static void 
 FileRead()
 {
+    // printf("now in FileRead...\n");
     OpenFile *openFile;    
     char *buffer = new char[ContentSize];
     int i, numBytes;
@@ -152,18 +155,18 @@ FileRead()
 	FileSize, ContentSize);
 
     if ((openFile = fileSystem->Open(FileName)) == NULL) {
-	printf("Perf test: unable to open file %s\n", FileName);
-	delete [] buffer;
-	return;
+    	printf("Perf test: unable to open file %s\n", FileName);
+    	delete [] buffer;
+    	return;
     }
-    for (i = 0; i < FileSize; i += ContentSize) {
+    for (i = 0; i < MAXN; i += ContentSize) {
         numBytes = openFile->Read(buffer, ContentSize);
-	if ((numBytes < 10) || strncmp(buffer, Contents, ContentSize)) {
-	    printf("Perf test: unable to read %s\n", FileName);
-	    delete openFile;
-	    delete [] buffer;
-	    return;
-	}
+    	if ((numBytes < 10) || strncmp(buffer, Contents, ContentSize)) {
+    	    printf("Perf test: unable to read %s\n", FileName);
+    	    delete openFile;
+    	    delete [] buffer;
+    	    return;
+    	}
     }
     delete [] buffer;
     delete openFile;	// close file
@@ -210,9 +213,6 @@ void testExercise5(){
     openFile->ExtendFile(256);
     openFile->ExtendFile(1250);
     openFile->ExtendFile(5400);
-    // fileSystem->ExtendFile("file1","/",256);
-    // fileSystem->ExtendFile("file1","/",1250);
-    // fileSystem->ExtendFile("file1","/",5400);
     printf("-----------------------------------------list file-----------------------------\n");
     fileSystem->List();
     fileSystem->Remove("file1","/");
@@ -231,14 +231,75 @@ void testExercise6(){
     fileSystem->Print();
     fileSystem->Remove("file1","/");
 }
+void read(int which){
+    printf("thread:%s in read\n", currentThread->getName());
+    FileRead();
+    
+}
+void write(){
+    printf("thread:%s in write\n", currentThread->getName());
+    OpenFile *openFile;    
+    int i, numBytes;
+    
+    openFile = fileSystem->Open(FileName);
+    if (openFile == NULL) {
+        printf("Perf test: unable to open %s\n", FileName);
+        return;
+    }
+    for (i = 0; i < MAXN; i += ContentSize) {
+        numBytes = openFile->Write(Contents, ContentSize);
+        if (numBytes < 10) {
+            printf("Perf test: unable to write %s\n", FileName);
+            delete openFile;
+            return;
+        }
+    }
+    delete openFile;    // close file
+}
+void testExercise7(){
+    if (!fileSystem->Create(FileName, 0)) {
+      printf("Perf test: can't create %s\n", FileName);
+      return;
+    }
+    else{
+        printf("successfully create file\n");
+    }
+    write();
+    Thread* t1 = new Thread("reader1");
+    t1->Fork(read,1);
+    read(1);
+    printf("%s remove the file\n",currentThread->getName());
+    while(fileSystem->Remove(FileName)==FALSE);
+}
+void remove(int which){
+    // printf("thread:%s remove the file\n",currentThread->getName());
+    fileSystem->Remove(FileName,"/");
+    // while(fileSystem->Remove(FileName,"/")==FALSE);
+}
+void testExercise7_remove(){
+    if (!fileSystem->Create(FileName, 0,1,"/")) {
+      printf("Perf test: can't create %s\n", FileName);
+      return;
+    }
+    else{
+        printf("successfully create file\n");
+    }
+    // write();
+    OpenFile *openFile = fileSystem->Open(FileName,"/");
+    Thread* t1 = new Thread("remove");
+    t1->Fork(remove,1);
+    currentThread->Yield();
+    
+}
 void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
     // testExercise3("testfile_this_is_a_very_long_filename_test1");
     // testExercise4();
-    testExercise6();
-
+    // testExercise6();
+    // testExercise7();
+    testExercise7_remove();
     // printf("-----------------------------------------list file-----------------------------\n");
     // fileSystem->List();
     // stats->Print();

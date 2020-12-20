@@ -26,28 +26,39 @@
 // returning.
 class SynchDisk {
   public:
-    SynchDisk(char* name);    		// Initialize a synchronous disk,
-					// by initializing the raw Disk.
-    ~SynchDisk();			// De-allocate the synch disk data
+    SynchDisk(char* name);          // Initialize a synchronous disk,
+                    // by initializing the raw Disk.
+    ~SynchDisk();           // De-allocate the synch disk data
     
     void ReadSector(int sectorNumber, char* data);
-    					// Read/write a disk sector, returning
-    					// only once the data is actually read 
-					// or written.  These call
-    					// Disk::ReadRequest/WriteRequest and
-					// then wait until the request is done.
+                        // Read/write a disk sector, returning
+                        // only once the data is actually read 
+                    // or written.  These call
+                        // Disk::ReadRequest/WriteRequest and
+                    // then wait until the request is done.
     void WriteSector(int sectorNumber, char* data);
     
-    void RequestDone();			// Called by the disk device interrupt
-					// handler, to signal that the
-					// current disk operation is complete.
+    void RequestDone();         // Called by the disk device interrupt
+                    // handler, to signal that the
+                    // current disk operation is complete.
+    void PlusReader(int sector);
+    void MinusReader(int sector);
+    void BeginWrite(int sector);
+    void EndWrite(int sector);
+    void AddVisitors(int sector);
+    void MinusVisitors(int sector);
+    int GetVisitorsNum(int sector);
 
   private:
-    Disk *disk;		  		// Raw disk device
-    Semaphore *semaphore; 		// To synchronize requesting thread 
-					// with the interrupt handler
-    Lock *lock;		  		// Only one read/write request
-					// can be sent to the disk at a time
+    Disk *disk;             // Raw disk device
+    Semaphore *semaphore;       // To synchronize requesting thread 
+                    // with the interrupt handler
+    Lock *lock;             // Only one read/write request
+                    // can be sent to the disk at a time
+    Lock *readerLock;
+    Semaphore *mutex[NumSectors];
+    int numVisitors[NumSectors];
+    int numReaders[NumSectors];
 };
 
 #endif // SYNCHDISK_H

@@ -50,6 +50,7 @@
 #include "directory.h"
 #include "filehdr.h"
 #include "filesys.h"
+#include "system.h"
 
 // Sectors containing the file headers for the bitmap of free sectors,
 // and the directory of files.  These file headers are placed in well-known 
@@ -315,7 +316,7 @@ FileSystem::Open(char *name)
     OpenFile *openFile = NULL;
     int sector;
 
-    DEBUG('f', "Opening file %s\n", name);
+    DEBUG('f', "thread:%s Opening file %s\n", currentThread->getName(),name);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name); 
     if (sector >= 0)        
@@ -366,7 +367,6 @@ FileSystem::Remove(char *name)
     BitMap *freeMap;
     FileHeader *fileHdr;
     int sector;
-    
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name);
@@ -374,6 +374,11 @@ FileSystem::Remove(char *name)
     if (sector == -1) {
        delete directory;
        return FALSE;             // file not found 
+    }
+    // synchDisk->GetVisitorsNum(sector);
+    if(synchDisk->GetVisitorsNum(sector) > 0){
+        printf("this file is still in use,now visitor=%s\n", synchDisk->GetVisitorsNum(sector));
+        return FALSE;
     }
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
@@ -405,12 +410,19 @@ FileSystem::Remove(char *name,char *path)
     OpenFile *dir_file = new OpenFile(sector);
     directory->FetchFrom(dir_file);
 
-    printf("root Sector=%d\n", sector);
+    // printf("root Sector=%d\n", sector);
     sector = directory->Find(name);
-    printf("Sector=%d\n", sector);
+    // printf("Sector=%d\n", sector);
     if (sector == -1) {
        delete directory;
        return FALSE;			 // file not found 
+    } 
+    if(synchDisk->GetVisitorsNum(sector) > 0){
+        printf("this file is still in use,now visitor=%d\n", synchDisk->GetVisitorsNum(sector));
+        return FALSE;
+    }
+    else{
+        printf("this file can be deleted.\n");
     }
     FileHeader *fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);

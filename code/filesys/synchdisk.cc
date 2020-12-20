@@ -16,12 +16,48 @@
 
 #include "copyright.h"
 #include "synchdisk.h"
+#include "system.h"
+
 
 //----------------------------------------------------------------------
 // DiskRequestDone
 // 	Disk interrupt handler.  Need this to be a C routine, because 
 //	C++ can't handle pointers to member functions.
 //----------------------------------------------------------------------
+void SynchDisk::PlusReader(int sector){
+    readerLock->Acquire();
+    numReaders[sector]++;
+    if(numReaders[sector]==1){
+        mutex[sector]->P();
+    }
+    printf("add a reader ,now reader cnt = %d\n", numReaders[sector]);
+    readerLock->Release();
+}
+void SynchDisk::MinusReader(int sector){
+    readerLock->Acquire();
+    numReaders[sector]--;
+    if(numReaders[sector]==0){
+        mutex[sector]->V();
+    }
+    printf("minus a reader,now reader cnt = %d\n", numReaders[sector]);
+    readerLock->Release();
+}
+void SynchDisk::BeginWrite(int sector){
+    mutex[sector]->P();
+}
+void SynchDisk::EndWrite(int sector){
+    mutex[sector]->V();
+}
+void SynchDisk::AddVisitors(int sector){
+    numVisitors[sector]++;
+}
+void SynchDisk::MinusVisitors(int sector){
+    numVisitors[sector]--;
+}
+int SynchDisk::GetVisitorsNum(int sector){
+    // printf("thread:%s sector=%d numVisitors=%d\n", currentThread->getName(),sector,numVisitors[sector]);
+    return numVisitors[sector];
+}
 
 static void
 DiskRequestDone (int arg)
@@ -44,7 +80,15 @@ SynchDisk::SynchDisk(char* name)
 {
     semaphore = new Semaphore("synch disk", 0);
     lock = new Lock("synch disk lock");
+    readerLock = new Lock("readerLock");
     disk = new Disk(name, DiskRequestDone, (int) this);
+
+    for(int i=0;i<NumSectors;i++){
+        numReaders[i]=0;
+        numVisitors[i]=0;
+        mutex[i] = new Semaphore("mutex",1);
+    }
+
 }
 
 //----------------------------------------------------------------------
@@ -58,6 +102,10 @@ SynchDisk::~SynchDisk()
     delete disk;
     delete lock;
     delete semaphore;
+    delete readerLock;
+    for(int i=0;i<NumSectors;i++){
+        delete mutex[i];
+    }
 }
 
 //----------------------------------------------------------------------
@@ -74,7 +122,7 @@ SynchDisk::ReadSector(int sectorNumber, char* data)
 {
     lock->Acquire();			// only one disk I/O at a time
     disk->ReadRequest(sectorNumber, data);
-    semaphore->P();			// wait for interrupt
+    // semaphore->P();			// wait for interrupt
     lock->Release();
 }
 
@@ -90,9 +138,9 @@ SynchDisk::ReadSector(int sectorNumber, char* data)
 void
 SynchDisk::WriteSector(int sectorNumber, char* data)
 {
-    lock->Acquire();			// only one disk I/O at a time
+    lock->Acquire();		// only one disk I/O at a time
     disk->WriteRequest(sectorNumber, data);
-    semaphore->P();			// wait for interrupt
+    // semaphore->P();			// wait for interrupt
     lock->Release();
 }
 
