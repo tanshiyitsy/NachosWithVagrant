@@ -291,15 +291,58 @@ void testExercise7_remove(){
     currentThread->Yield();
     
 }
+#define PIPE "PIPE"
+#define MaxPipeSize SectorSize
+void PipeWrite(int which){
+    // 1. 打开管道
+    OpenFile *pipFile = fileSystem->Open(PIPE);
+    char *buffer = new char[MaxPipeSize];
+    printf("thread:%s input to pipe...\n", currentThread->getName());
+    // 2. 从控制台读入内容
+    scanf("%s",buffer);
+    int size = strlen(buffer);
+    // 3. 把内容重定向到管道
+    pipFile->Write(buffer,size);
+    delete [] buffer;
+    delete pipFile;
+}
+void PipeRead(int which){
+    // 1. 打开管道
+    OpenFile *pipFile = fileSystem->Open(PIPE);
+    char *buffer = new char[MaxPipeSize];
+    // 2. 从管道读取内容
+    // printf("len=%d\n", pipFile->Length());
+    pipFile->Read(buffer,pipFile->Length());
+    buffer[pipFile->Length()] = '\0';
+    // 3. 重定向到终端
+    printf("thread:%s output from pip:%s\n", currentThread->getName(),buffer);
+    delete [] buffer;
+    delete pipFile;
+}
+void Pipe(){
+    // 1. 创建管道文件
+    if (!fileSystem->Create(PIPE, 0,1,"/")) {
+      printf("Perf test: can't create %s\n", FileName);
+      return;
+    }
+    else{
+        printf("successfully create file\n");
+    }
+    Thread *pip_write = new Thread("pip_write");
+    Thread *pip_read = new Thread("pip_read");
+    pip_write->Fork(PipeWrite,0);
+    pip_read->Fork(PipeRead,0);
+}
 void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
+    Pipe();
     // testExercise3("testfile_this_is_a_very_long_filename_test1");
     // testExercise4();
     // testExercise6();
     // testExercise7();
-    testExercise7_remove();
+    // testExercise7_remove();
     // printf("-----------------------------------------list file-----------------------------\n");
     // fileSystem->List();
     // stats->Print();

@@ -16,7 +16,6 @@
 
 #include "copyright.h"
 #include "synchdisk.h"
-#include "system.h"
 
 
 //----------------------------------------------------------------------

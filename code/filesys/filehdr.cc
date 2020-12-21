@@ -87,7 +87,7 @@ bool FileHeader::ExtendAllocate(BitMap *freeMap, int fileSize){
     int oldSectors = numSectors;
     numBytes += fileSize;
     numSectors = divRoundUp(numBytes,SectorSize);
-    numBytes = numSectors * SectorSize;
+    // numBytes = numSectors * SectorSize;
     printf("oldByte=%d oldSectors=%d numBytes=%d numSectors=%d\n", oldByte,oldSectors,numBytes,numSectors);
     if(numSectors == oldSectors){
         return TRUE;
