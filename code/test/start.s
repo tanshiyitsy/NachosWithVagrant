@@ -130,6 +130,9 @@ Yield:
 	j	$31
 	.end Yield
 
+	.globl Yield
+	.ent	Yield
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

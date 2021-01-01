@@ -130,6 +130,78 @@ Yield:
 	j	$31
 	.end Yield
 
+	.globl Pwd
+	.ent	Pwd
+Pwd:
+	addiu $2,$0,SC_Pwd
+	syscall
+	j	$31
+	.end Pwd
+
+	.globl Ls
+	.ent	Ls
+Ls:
+	addiu $2,$0,SC_Ls
+	syscall
+	j	$31
+	.end Ls
+
+	.globl Cd
+	.ent	Cd
+Cd:
+	addiu $2,$0,SC_Cd
+	syscall
+	j	$31
+	.end Cd
+
+	.globl Nf
+	.ent	Nf
+Nf:
+	addiu $2,$0,SC_Nf
+	syscall
+	j	$31
+	.end Nf
+
+	.globl Nd
+	.ent	Nd
+Nd:
+	addiu $2,$0,SC_Nd
+	syscall
+	j	$31
+	.end Nd
+
+	.globl Df
+	.ent	Df
+Df:
+	addiu $2,$0,SC_Df
+	syscall
+	j	$31
+	.end Df
+
+	.globl Dd
+	.ent	Dd
+Dd:
+	addiu $2,$0,SC_Dd
+	syscall
+	j	$31
+	.end Dd
+
+	.globl H
+	.ent	H
+H:
+	addiu $2,$0,SC_H
+	syscall
+	j	$31
+	.end H
+
+	.globl Q
+	.ent	Q
+Q:
+	addiu $2,$0,SC_Q
+	syscall
+	j	$31
+	.end Q
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

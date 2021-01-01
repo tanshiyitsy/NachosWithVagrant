@@ -29,6 +29,15 @@
 #define SC_Close	8
 #define SC_Fork		9
 #define SC_Yield	10
+#define SC_Pwd      11
+#define SC_Ls       12
+#define SC_Cd       13
+#define SC_Nf       14
+#define SC_Nd       15
+#define SC_Df       16
+#define SC_Dd       17
+#define SC_H        18
+#define SC_Q        19
 
 #ifndef IN_ASM
 
@@ -41,6 +50,16 @@
  * are then invoked in the Nachos kernel, after appropriate error checking, 
  * from the system call entry point in exception.cc.
  */
+
+void Pwd();
+void Ls();
+void Cd(char *path);
+void Nf(char *filename);
+void Nd(char *dirname);
+void Df(char *filename);
+void Dd(char *dirname);
+void H();
+void Q();
 
 /* Stop Nachos, and print out performance stats */
 void Halt();		
@@ -122,7 +141,9 @@ int Fork(void (*func)());
 /* Yield the CPU to another runnable thread, whether in this address space 
  * or not. 
  */
-void Yield();		
+void Yield();
+
+
 
 #endif /* IN_ASM */
 

@@ -20,11 +20,14 @@
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
-
+#include <stdlib.h>
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
 #include "filesys.h"
+#include "unistd.h"
+#include <sys/types.h> 
+#include <sys/stat.h> 
 
 
 //----------------------------------------------------------------------
@@ -156,8 +159,8 @@ ExceptionHandler(ExceptionType which)
             machine->PCAdvanced();
     	}
     	else if(type == SC_Write){
-            printf("------------------now in SC_Write--------------\n");
-            printf("currentThread is %d\n", currentThread->getPid());
+            // printf("------------------now in SC_Write--------------\n");
+            // printf("currentThread is %d\n", currentThread->getPid());
             // void Write(char *buffer, int size, OpenFileId id);
             // 把buffer里的内容写入file 
             int addr = machine->ReadRegister(4);
@@ -176,14 +179,14 @@ ExceptionHandler(ExceptionType which)
             buffer[size] = '\0';
             // printf("the buffer is:\n");
             if((int)openfile == ConsoleOutput){
-                printf("%s\n", buffer);
+                printf("\n%s", buffer);
             }
             else
                 openfile->Write(buffer,size);
             machine->PCAdvanced();
     	}
     	else if(type == SC_Read){
-            printf("------------------now in SC_Read--------------\n");
+            // printf("------------------now in SC_Read--------------\n");
             // int Read(char *buffer, int size, OpenFileId id);
             // 把file里的内容读入buffer
             int addr = machine->ReadRegister(4);
@@ -329,6 +332,131 @@ ExceptionHandler(ExceptionType which)
             UserProgClear();
             machine->PCAdvanced();
             currentThread->Finish();
+        }
+        else if(type == SC_Pwd){
+            system("pwd");
+            machine->PCAdvanced();
+        }
+        else if(type==SC_Ls){
+            system("ls");
+            machine->PCAdvanced();
+        }
+        else if(type==SC_Cd){
+            // printf("cd...");
+            int addr=machine->ReadRegister(4);
+            char path[50];
+            int pos=0,data=0;
+            while(1){
+                if(machine->ReadMem(addr + pos,1,&data)){
+                    if(data==0){
+                        path[pos]='\0';
+                        break;
+                    }
+                    else{
+                        path[pos++]=(char)data;
+                    }
+                }
+            }
+            // printf("path=%s\n",path);
+            chdir(path);
+            machine->PCAdvanced();
+        }
+        else if(type==SC_Nf){
+            // 创建文件
+            int addr=machine->ReadRegister(4);
+            char filenmae[50];
+            int pos=0,data=0;
+            while(1){
+                if(machine->ReadMem(addr + pos,1,&data)){
+                    if(data==0){
+                        filenmae[pos]='\0';
+                        break;
+                    }
+                    else{
+                        filenmae[pos++]=(char)data;
+                    }
+                }
+            }
+            fileSystem->Create(filenmae,100);
+            machine->PCAdvanced();
+        }
+        else if(type==SC_Nd){
+            // printf("nd...");
+            int addr=machine->ReadRegister(4);
+            char dirname[50];
+            int pos=0,data=0;
+            while(1){
+                if(machine->ReadMem(addr + pos,1,&data)){
+                    if(data==0){
+                        dirname[pos]='\0';
+                        break;
+                    }
+                    else{
+                        dirname[pos++]=(char)data;
+                    }
+                }
+            }
+            mkdir(dirname,0777);
+            machine->PCAdvanced();
+        }
+        else if(type==SC_Df){
+            // printf("df...");
+            int addr=machine->ReadRegister(4);
+            char filenmae[50];
+            int pos=0,data=0;
+            while(1){
+                if(machine->ReadMem(addr + pos,1,&data)){
+                    if(data==0){
+                        filenmae[pos]='\0';
+                        break;
+                    }
+                    else{
+                        filenmae[pos++]=(char)data;
+                    }
+                }
+            }
+            fileSystem->Remove(filenmae);
+            machine->PCAdvanced();
+        }
+        else if(type==SC_Dd){
+            // printf("dd...");
+            int addr=machine->ReadRegister(4);
+            char dirname[50];
+            int pos=0,data=0;
+            while(1){
+                if(machine->ReadMem(addr + pos,1,&data)){
+                    if(data==0){
+                        dirname[pos]='\0';
+                        break;
+                    }
+                    else{
+                        dirname[pos++]=(char)data;
+                    }
+                }
+            }
+            rmdir(dirname);
+            machine->PCAdvanced();
+        }
+        else if(type==SC_H){
+            // printf("h...");
+            printf("-------------------------------\n");
+            printf("x [-userprog]: excute user programme\n");
+            printf("pwd : Print working directory \n");
+            printf("ls: List files\n");
+            printf("cd: List files\n");
+            printf("nf: new file\n");
+            printf("nd: new directory\n");
+            printf("df: delete a file\n");
+            printf("dd: delete directory\n");
+            printf("h: for help\n");
+            printf("q: for quit shell\n");
+            printf("-------------------------------\n");
+            machine->PCAdvanced();
+        }
+        else if(type==SC_Q){
+            // printf("q...");
+            interrupt->Halt();
+            machine->PCAdvanced();
         }
     } 
     // pageFadult去页表里查找
