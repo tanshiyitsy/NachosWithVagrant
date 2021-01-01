@@ -32,6 +32,7 @@ Machine::Run()
 {
     Instruction *instr = new Instruction;  // storage for decoded instruction
 
+	// printf("PCReg=%d currentThread pid = %d\n", registers[PCReg],currentThread->getPid());
     if(DebugIsEnabled('m'))
         printf("Starting thread \"%s\" at time %d\n",
 	       currentThread->getName(), stats->totalTicks);
@@ -541,7 +542,7 @@ Machine::OneInstruction(Instruction *instr)
       case OP_SYSCALL:
       // printf("last op\n");
       // 最后一个异常是在这里抛出的
-      	printf("pid:%d next is going to enter SyscallException, PCReg = %d\n",currentThread->getPid(), registers[PCReg]);
+      	// printf("pid:%d next is going to enter SyscallException, PCReg = %d\n",currentThread->getPid(), registers[PCReg]);
 		RaiseException(SyscallException, 0);
 		// printf("SyscallException handler over,PCReg = %d\n", registers[PCReg]);
 		return; 

@@ -9,8 +9,8 @@ main()
     char prompt[2], ch, buffer[60];
     int i;
 
-    prompt[0] = '-';
-    prompt[1] = '-';
+    prompt[0] = '>';
+    prompt[1] = '>';
 
     while( 1 )
     {
@@ -27,8 +27,11 @@ main()
 	buffer[--i] = '\0';
 
 	if( i > 0 ) {
-		newProc = Exec(buffer);
-		Join(newProc);
+        if(buffer[0]=='x'&&buffer[1]==' '){
+            newProc = Exec(buffer+2);
+		    Join(newProc);
+        }
+		
 	}
     }
 }

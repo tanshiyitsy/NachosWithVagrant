@@ -212,7 +212,7 @@ AddrSpace::AddrSpace(OpenFile *executable,char *filename){
         pageTable[i].visitTime = 0;
     }
     // bzero(machine->mainMemory, size);
-
+    // 暂时把文件里的内容读到虚拟内存里
     fileSystem->Create("virtual_memory",size);
     OpenFile *openfile = fileSystem->Open("virtual_memory");
     if(openfile == NULL) ASSERT(false);

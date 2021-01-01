@@ -141,6 +141,7 @@ class Machine {
 				// translation couldn't be completed.
     ExceptionType FIFOSwap(int virtAddr);
     ExceptionType LRUSwap(int virtAddr);
+    void UserProgClear();
     void RaiseException(ExceptionType which, int badVAddr);
 				// Trap to the Nachos kernel, because of a
 				// system call or other exception.  

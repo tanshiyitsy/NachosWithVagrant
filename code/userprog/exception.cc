@@ -58,33 +58,6 @@ void PageFaultHandler(){
 
 }
 void UserProgClear(){
-    // TranslationEntry *pageTable;
-    // unsigned int pageTableSize;
-    int pageTableSize = machine->pageTableSize;
-    TranslationEntry *pageTable = machine->pageTable;
-    int pid = currentThread->getPid();
-    printf("pid:%d start to clear bitmap,and clear the pageTable\n",currentThread->getPid());
-    for(int i = 0;i < pageTableSize;i++){
-        // 清除位图标志
-        int pn = pageTable[i].physicalPage;
-        int temp_pid = pageTable[i].pid;
-        // printf("i=%d pa=%d va=%d pid=%d\n", i,pageTable[i].physicalPage,pageTable[i].virtualPage,temp_pid);
-        if(pn >= 0 && pid == temp_pid){
-            // printf("clear the memory of bitmap is %d\n", pageTable[i].physicalPage);
-            bitmap->Clear(pageTable[i].physicalPage);
-            // 清除pageTable映射
-            pageTable[i].virtualPage = i;
-            pageTable[i].physicalPage = -1;
-            pageTable[i].pid = -1;
-            pageTable[i].valid = FALSE;
-            pageTable[i].use = FALSE;
-            pageTable[i].dirty = FALSE;
-            pageTable[i].readOnly = FALSE;
-            pageTable[i].createTime = 0;
-            pageTable[i].visitTime = 0;
-        }
-        // else pn == -1   这种情况说明该页面长时间没被访问，页框被其他页面占用了，该页面就不在内存了，所以无需清除
-    }
     
 }
 void exec_func(int which){
@@ -177,6 +150,7 @@ ExceptionHandler(ExceptionType which)
     	else if(type == SC_Close){
             printf("------------------now in SC_Close--------------\n");
             // 关闭打开的文件指针
+            printf("thread:%d",currentThread->getPid());
             OpenFile* openfile = (OpenFile*)machine->ReadRegister(4);
             delete openfile;
             machine->PCAdvanced();
@@ -188,6 +162,7 @@ ExceptionHandler(ExceptionType which)
             // 把buffer里的内容写入file 
             int addr = machine->ReadRegister(4);
             int size = machine->ReadRegister(5);
+            int fd = machine->ReadRegister(6);
             OpenFile* openfile = (OpenFile*)machine->ReadRegister(6);
             char buffer[size+1];
             int data;
@@ -199,7 +174,7 @@ ExceptionHandler(ExceptionType which)
                 }
             }
             buffer[size] = '\0';
-            printf("the buffer is:%s\n", buffer);
+            // printf("the buffer is:\n");
             if((int)openfile == ConsoleOutput){
                 printf("%s\n", buffer);
             }
@@ -215,7 +190,16 @@ ExceptionHandler(ExceptionType which)
             int size = machine->ReadRegister(5);
             OpenFile* openfile = (OpenFile*)machine->ReadRegister(6);
             char temp[size+1]; //暂时用于存放读取的数据
-            int ans = openfile->Read(temp,size);
+            if((int)openfile==ConsoleInput){
+                int temp_size=0;
+                while(temp_size<size){
+                    temp[temp_size++] = getchar();
+                }
+            }
+            else{
+                int ans = openfile->Read(temp,size);
+            }
+            temp[size]='\0';
             // 写入buffer所在内存
             int i = 0;
             while(i < size){
@@ -223,9 +207,8 @@ ExceptionHandler(ExceptionType which)
                     i++;
                 }
             }
-            printf("temp is:%s,this is read from file\n", temp);
-            printf("ans is %d\n", ans);
-            machine->WriteRegister(2,ans);
+            // printf("temp is:%s,this is read from file\n", temp);
+            machine->WriteRegister(2,size);
             machine->PCAdvanced();
     	}
         else if(type == SC_Exec){
@@ -252,22 +235,26 @@ ExceptionHandler(ExceptionType which)
             else{
                 printf("successfully open the file\n");
             }
-
+            // AddrSpace* old_space = currentThread->space;
+            // int old_pc=machine->ReadRegister(PCReg);
             AddrSpace* space = new AddrSpace(executable,fileName);
             delete executable;
             // 释放当前进程的页表
             UserProgClear();
-            printf("InitRegisters.....\n");
+            printf("thread:%d InitRegisters.....\n",currentThread->getPid());
+            currentThread->space = space;
             space->InitRegisters();
             space->RestoreState();
-            currentThread->space = space;
-            printf("renew the space....\n");
+            int pc=machine->ReadRegister(PCReg);
+            // printf("pc=%d renew the space....\n",pc);
             // 需要重新fork吗？不需要
             // t-Fork(exec_func,0);
-            printf("rerun....\n");
-            machine->Run();
+            printf("run a new user prog....\n");
             machine->WriteRegister(2,currentThread->getPid());
-            machine->PCAdvanced();
+            machine->Run();
+            // currentThread->space=old_space;
+            // machine->WriteRegister(PCReg,old_pc);
+            // machine->PCAdvanced();
         }
         else if(type == SC_Fork){
             // Address 新增属性fileName

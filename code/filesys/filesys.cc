@@ -174,6 +174,7 @@ FileSystem::FileSystem(bool format)
 bool
 FileSystem::Create(char *name, int initialSize)
 {
+    printf("in 1 create...");
     Directory *directory;
     BitMap *freeMap;
     FileHeader *hdr;
@@ -312,6 +313,7 @@ FileSystem::Create(char *name, int initialSize,int type,char *path)
 OpenFile *
 FileSystem::Open(char *name)
 { 
+    printf("now in openxzcxzc...\n");
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
     int sector;
@@ -319,6 +321,7 @@ FileSystem::Open(char *name)
     DEBUG('f', "thread:%s Opening file %s\n", currentThread->getName(),name);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name); 
+    printf("sector=%d\n", sector);
     if (sector >= 0)        
     openFile = new OpenFile(sector);    // name was found in directory 
     delete directory;

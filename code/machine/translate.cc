@@ -392,3 +392,39 @@ ExceptionType Machine::LRUSwap(int virtAddr){
 	// printf("tlb has been renewed,pa=%d va=%d pid=%d\n",tlb[index].physicalPage,tlb[index].virtualPage,tlb[index].pid);
 	return NoException;
 }
+void Machine::UserProgClear(){
+	// TranslationEntry *pageTable;
+    // unsigned int pageTableSize;
+    int pageTableSize = machine->pageTableSize;
+    TranslationEntry *pageTable = machine->pageTable;
+    int pid = currentThread->getPid();
+    printf("pid:%d start to clear bitmap,and clear the pageTable\n",currentThread->getPid());
+    // bool Remove(char *name);
+    fileSystem->Remove("virtual_memory");
+    for(int i = 0;i < pageTableSize;i++){
+        // 清除位图标志
+        int pn = pageTable[i].physicalPage;
+        int temp_pid = pageTable[i].pid;
+        // printf("i=%d pa=%d va=%d pid=%d\n", i,pageTable[i].physicalPage,pageTable[i].virtualPage,temp_pid);
+        if(pn >= 0 && pid == temp_pid){
+            // printf("clear the memory of bitmap is %d\n", pageTable[i].physicalPage);
+            bitmap->Clear(pageTable[i].physicalPage);
+            // 清除pageTable映射
+            pageTable[i].virtualPage = i;
+            pageTable[i].physicalPage = -1;
+            pageTable[i].pid = -1;
+            pageTable[i].valid = FALSE;
+            pageTable[i].use = FALSE;
+            pageTable[i].dirty = FALSE;
+            pageTable[i].readOnly = FALSE;
+            pageTable[i].createTime = 0;
+            pageTable[i].visitTime = 0;
+        }
+        // else pn == -1   这种情况说明该页面长时间没被访问，页框被其他页面占用了，该页面就不在内存了，所以无需清除
+    }
+    
+    // 
+    for (int i = 0; i < TLBSize; i++){
+         tlb[i].valid=false;
+    }
+}

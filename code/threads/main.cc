@@ -121,6 +121,7 @@ main(int argc, char **argv)
 #ifdef USER_PROGRAM   
         if (!strcmp(*argv, "-x")) {        	// run a user program
 	          ASSERT(argc > 1);
+			//   printf("in main....");
             StartProcess(*(argv + 1));
             // MultiUserProcess();
             argCount = 2;

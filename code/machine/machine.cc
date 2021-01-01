@@ -217,7 +217,8 @@ void Machine::WriteRegister(int num, int value)
 }
 void Machine::PCAdvanced(){
     WriteRegister(PrevPCReg,registers[PCReg]);
-    WriteRegister(PCReg,registers[NextPCReg]);
+    // WriteRegister(PCReg,registers[NextPCReg]);
+    WriteRegister(PCReg,registers[PCReg]+4);
     // WriteRegister(NextPCReg,registers[NextPCReg] + 4);
-    WriteRegister(NextPCReg,registers[NextPCReg]+4);
+    WriteRegister(NextPCReg,registers[PCReg]+4);
 }
