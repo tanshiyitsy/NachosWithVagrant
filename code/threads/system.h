@@ -31,6 +31,7 @@ extern Statistics *stats;			// performance metrics
 extern Timer *timer;				// the hardware alarm clock
 extern Thread *thread_pool[PID_MAX];
 extern int pid_pool[PID_MAX];
+extern Message messages[Msg_Num];
 
 #ifdef USER_PROGRAM
 #include "machine.h"

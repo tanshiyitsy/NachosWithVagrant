@@ -292,6 +292,32 @@ Thread::Sleep ()
 	printf("block thread:%s nextThread:%s\n",currentThread->getName(),nextThread->getName());
     scheduler->Run(nextThread); // returns when we've been signalled
 }
+bool Thread::Send(char *msg,int receive_pid){
+    // 将要传递的消息和接收进程的pid找一个槽
+    // 判断msg的合法性，长度大于0小于Msg_Len
+    int len = strlen(msg);
+    ASSERT(len>0&&len<Msg_Len);
+    for(int i=0;i<Msg_Num;i++){
+        if(messages[i].valid==false){
+            messages[i].valid=true;
+            messages[i].receive_pid = receive_pid;
+            strcpy(messages[i].msg,msg);
+            messages[i].count=len;
+            return true;
+        }
+    }
+    return false;
+}
+int Thread::Receive(char *msg){
+    for(int i=0;i<Msg_Num;i++){
+        if(messages[i].valid==true && messages[i].receive_pid == currentThread->getPid()){
+            messages[i].valid = false;
+            strcpy(msg,messages[i].msg);
+            return messages[i].count;
+        }
+    }
+    return -1;
+}
 
 //----------------------------------------------------------------------
 // ThreadFinish, InterruptEnable, ThreadPrint

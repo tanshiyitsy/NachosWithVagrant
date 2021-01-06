@@ -55,6 +55,9 @@
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
 #define StackSize	(4 * 1024)	// in words
 #define PID_MAX 128 // 系统最大线程
+#define Msg_Num 20
+#define Msg_Len 40
+
 
 // int pid_pool[PID_MAX];
 
@@ -65,6 +68,13 @@ enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
 // external function, dummy routine whose sole job is to call Thread::Print
 extern void ThreadPrint(int arg);	 
 
+class Message{
+  public:
+    int count;
+    bool valid;
+    int receive_pid;
+    char msg[Msg_Len];
+};
 // The following class defines a "thread control block" -- which
 // represents a single thread of execution.
 //
@@ -108,6 +118,8 @@ class Thread {
     int getUid() { return uid;}
     void Print() { printf("%s, ", name); }
     int getTricks() { return tricks;}
+    bool Send(char *msg,int receive_pid);
+    int Receive(char *msg);
 
     int pid;
     int uid;

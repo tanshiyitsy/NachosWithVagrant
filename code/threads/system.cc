@@ -20,6 +20,7 @@ Timer *timer;				// the hardware timer device,
 Thread *thread_pool[PID_MAX];
 int pid_pool[PID_MAX];
 					// for invoking context switches
+Message messages[Msg_Num];
 
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
@@ -152,6 +153,10 @@ Initialize(int argc, char **argv)
     // object to save its state. 
     currentThread = new Thread("main");		
     currentThread->setStatus(RUNNING);
+    // Message messages[Msg_MAX];
+    for(int i=0;i<Msg_Num;i++){
+        messages[i].valid = false;
+    }
 
     interrupt->Enable();
     CallOnUserAbort(Cleanup);			// if user hits ctl-C

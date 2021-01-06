@@ -57,6 +57,7 @@
 extern int testnum;
 extern int pid_pool[PID_MAX];
 extern Thread *thread_pool[PID_MAX];
+extern Message messages[Msg_Num];
 #endif
 
 // External functions used by this file
@@ -66,6 +67,7 @@ extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MultiUserProcess();
 extern void MailTest(int networkID);
+
 
 //----------------------------------------------------------------------
 // main
@@ -91,7 +93,7 @@ main(int argc, char **argv)
     (void) Initialize(argc, argv);
     
 #ifdef THREADS
-    // printf("above is initialize\n");
+    printf("above is initialize\n");
     ThreadTest(); // 用于测试ts命令
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
       argCount = 1;

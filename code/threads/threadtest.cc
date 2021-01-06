@@ -13,7 +13,7 @@
 #include "system.h"
 
 // testnum is set in main.cc
-int testnum = 3;
+int testnum = 7;
 
 //----------------------------------------------------------------------
 // SimpleThread
@@ -297,6 +297,23 @@ void Lab3Chan1Test(){
     consumer3->Fork(Consumer,1);
     currentThread->Yield();
 }
+void funcSender(int receive_pid){
+    // printf("thread:%s ")
+    ASSERT(currentThread->Send("hello OS Lab7",receive_pid));
+}
+void funcReceive(int which){
+    char msg[Msg_Len];
+    ASSERT(currentThread->Receive(msg)>0);
+    printf("thread:%s receive msg:%s\n",currentThread->getName(),msg);
+}
+void Lab7Test(){
+    // printf("this lab7 test\n");
+    Thread *receiver=new Thread("receiver");
+    Thread *sender = new Thread("sender");
+    sender->Fork(funcSender,receiver->getPid());
+    receiver->Fork(funcReceive,sender->getPid());
+    currentThread->Yield();
+}
 //----------------------------------------------------------------------
 // ThreadTest
 // 	Invoke a test routine.
@@ -316,6 +333,9 @@ ThreadTest()
             // ThreadTestLab3();
             // Lab3RWLockTest();
         Lab3Chan1Test();
+            break;
+        case 7:
+            Lab7Test();
             break;
         default:
         	printf("No test specified.\n");
