@@ -84,6 +84,7 @@ class Thread {
     int machineState[MachineStateSize];  // all registers except for stackTop
 
   public:
+    // 默认为Just_Created
     Thread(char* threadName, int priority);
     Thread(char* debugName);		// initialize a Thread
     ~Thread(); 				// deallocate a Thread

@@ -11,27 +11,29 @@
  */
 
 #include "syscall.h"
+
 void func(){
 	// 1. 创建文件
-	char *name = "test_fork";
-	if(Create(name) != -1){
-		// 2. 打开文件
-		int fd = Open(name);
-		if(fd != -1){
-			// 3. 写入数据
-			int cnt = 35;
-			Write("this content is for test fork func",cnt,fd);
-			Close(fd);
-		}
-	}
-	// Exit(0);
+	// char *name = "test_fork";
+	// if(Create(name) != -1){
+	// 	// 2. 打开文件
+	// 	int fd = Open(name);
+	// 	if(fd != -1){
+	// 		// 3. 写入数据
+	// 		int cnt = 35;
+	// 		Write("this content is for test fork func",cnt,fd);
+	// 		Close(fd);
+	// 	}
+	// }
+	Exit(0);
 }
 int
 main()
 {
-	// int a = 1;
-	// int b= 2;
-    // int child = Fork(func);
+	int child = Fork(func);
+	Yield();
+	Join(child);
+	Exit(0);
     // Halt();
     /* not reached */
 }

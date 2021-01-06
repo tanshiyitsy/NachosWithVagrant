@@ -100,7 +100,7 @@ Machine::OneInstruction(Instruction *instr)
     int nextLoadValue = 0; 	// record delayed load operation, to apply
 				// in the future
 
-    // printf("PCReg=%d currentThread pid = %d\n", registers[PCReg],currentThread->getPid());
+    printf("PCReg=%d currentThread pid = %d\n", registers[PCReg],currentThread->getPid());
     // Fetch instruction 
     if (!machine->ReadMem(registers[PCReg], 4, &raw)){
     	return;			// exception occurred
@@ -125,7 +125,7 @@ Machine::OneInstruction(Instruction *instr)
     int sum, diff, tmp, value;
     unsigned int rs, rt, imm;
 
-    // printf("opCode=%d rs=%d rt=%d\n", instr->opCode,registers[instr->rs],registers[instr->rt]);
+    printf("opCode=%d rs=%d rt=%d\n", instr->opCode,registers[instr->rs],registers[instr->rt]);
     
     // Execute the instruction (cf. Kane's book)
     switch (instr->opCode) {
